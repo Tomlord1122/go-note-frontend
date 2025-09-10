@@ -24,17 +24,9 @@
 	}: Props = $props();
 
 	// 從所有筆記中提取唯一標籤
-	let allTags: string[] = $derived(() => {
-		const tagsArray: string[] = [];
-		notes.forEach((note) => {
-			note.tags.forEach((tag) => {
-				if (!tagsArray.includes(tag)) {
-					tagsArray.push(tag);
-				}
-			});
-		});
-		return tagsArray.sort();
-	});
+    let allTags : string[] = $derived(
+        notes.flatMap((note) => note.tags).filter((tag, index, self) => self.indexOf(tag) === index).sort()
+    )
 
 	// 切換標籤選擇
 	function toggleTag(tag: string) {
@@ -46,7 +38,7 @@
 	}
 
 	// 檢查是否有活躍的過濾器
-	let hasActiveFilters: boolean = $derived(
+	let hasActiveFilters = $derived(
 		() => selectedTags.length > 0 || sortOrder !== 'newest' || searchQuery.trim() !== ''
 	);
 </script>
@@ -115,7 +107,7 @@
 		</div>
 
 		<!-- 清除過濾器按鈕 -->
-		{#if hasActiveFilters}
+		{#if hasActiveFilters()}
 			<button
 				onclick={onClearFilters}
 				class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-1 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
@@ -136,7 +128,7 @@
 	<!-- 標籤過濾器 -->
 	{#if allTags.length > 0}
 		<div class="mt-4 border-t border-gray-200 pt-4">
-			<p class="mb-2 text-sm font-medium text-gray-700">按標籤過濾:</p>
+			<label class="mb-2 block text-sm font-medium text-gray-700">按標籤過濾:</label>
 			<div class="flex flex-wrap gap-2">
 				{#each allTags as tag (tag)}
 					<button
