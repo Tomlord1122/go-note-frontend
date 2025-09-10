@@ -24,9 +24,12 @@
 	}: Props = $props();
 
 	// 從所有筆記中提取唯一標籤
-    let allTags : string[] = $derived(
-        notes.flatMap((note) => note.tags).filter((tag, index, self) => self.indexOf(tag) === index).sort()
-    )
+	let allTags: string[] = $derived(
+		notes
+			.flatMap((note) => note.tags)
+			.filter((tag, index, self) => self.indexOf(tag) === index)
+			.sort()
+	);
 
 	// 切換標籤選擇
 	function toggleTag(tag: string) {
@@ -128,7 +131,9 @@
 	<!-- 標籤過濾器 -->
 	{#if allTags.length > 0}
 		<div class="mt-4 border-t border-gray-200 pt-4">
-			<label class="mb-2 block text-sm font-medium text-gray-700">按標籤過濾:</label>
+			<label for="tag-select" class="mb-2 block text-sm font-medium text-gray-700"
+				>按標籤過濾:</label
+			>
 			<div class="flex flex-wrap gap-2">
 				{#each allTags as tag (tag)}
 					<button
@@ -158,8 +163,8 @@
 	{/if}
 
 	<!-- 過濾器狀態顯示 -->
-	{#if selectedTags.length > 0 || searchQuery.trim() !== ''}
-		<div class="mt-3 text-xs text-gray-600">
+	<div class="mt-3 text-xs text-gray-600">
+		{#if selectedTags.length > 0 || searchQuery.trim() !== ''}
 			{#if searchQuery.trim() !== ''}
 				<span>搜索: "{searchQuery}"</span>
 				{#if selectedTags.length > 0}
@@ -169,6 +174,8 @@
 			{#if selectedTags.length > 0}
 				<span>已選擇 {selectedTags.length} 個標籤: {selectedTags.join(', ')}</span>
 			{/if}
-		</div>
-	{/if}
+		{:else}
+			<span>未選擇標籤</span>
+		{/if}
+	</div>
 </div>

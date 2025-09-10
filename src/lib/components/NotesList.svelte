@@ -20,7 +20,13 @@
 
 	// 過濾和排序筆記
 	let filteredAndSortedNotes: Note[] = $derived(
-		notes.filter((note) => note.title.toLowerCase().includes(searchQuery.toLowerCase()) || note.content.toLowerCase().includes(searchQuery.toLowerCase()) || note.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+		notes
+			.filter(
+				(note) =>
+					note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					note.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+			)
 			.filter((note) => selectedTags.every((tag) => note.tags.includes(tag)))
 			.sort((a, b) => {
 				if (sortOrder === 'newest') {
@@ -32,7 +38,7 @@
 				}
 				return 0;
 			})
-	)
+	);
 
 	// 當過濾後的筆記數量改變時通知父組件
 	$effect(() => {
@@ -170,7 +176,7 @@
 			<p class="mb-4 text-gray-600">嘗試調整過濾條件或清除所有過濾器</p>
 			<button
 				onclick={clearFilters}
-				class="inline-flex items-center justify-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+				class="inline-flex items-center justify-center rounded-md bg-gray-200 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
 			>
 				清除過濾器
 			</button>
