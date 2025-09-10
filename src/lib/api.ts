@@ -37,6 +37,20 @@ export interface Note {
 	updated_at: string;
 }
 
+// 向量搜尋結果項
+export interface SearchNotesItem extends Note {
+	similarity: number;
+}
+
+// 閃卡型別
+export interface Flashcard {
+	question: string;
+	answer: string;
+	explanation?: string;
+	difficulty?: string;
+	tags?: string[];
+}
+
 export interface OAuthResponse {
 	url: string;
 	message: string;
@@ -91,6 +105,57 @@ class ApiClient {
 			return {
 				error: error instanceof Error ? error.message : '網路錯誤'
 			};
+		}
+	}
+
+	// 讀取 SSE 串流（POST）
+	private async streamSSE(
+		endpoint: string,
+		body: unknown,
+		onMessage: (payload: unknown) => void,
+		signal?: AbortSignal
+	) {
+		const response = await fetch(`${this.baseUrl}${endpoint}`, {
+			method: 'POST',
+			headers: this.getAuthHeaders(),
+			body: JSON.stringify(body),
+			signal
+		});
+
+		if (!response.ok || !response.body) {
+			const text = await response.text().catch(() => '');
+			throw new Error(text || `HTTP ${response.status}`);
+		}
+
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder('utf-8');
+		let buffer = '';
+
+		while (true) {
+			const { value, done } = await reader.read();
+			if (done) break;
+			buffer += decoder.decode(value, { stream: true });
+
+			let lineEnd;
+			// SSE 以 \n\n 分段，每段包含一或多個以 data: 開頭的行
+			while ((lineEnd = buffer.indexOf('\n\n')) !== -1) {
+				const chunk = buffer.slice(0, lineEnd);
+				buffer = buffer.slice(lineEnd + 2);
+
+				const lines = chunk.split('\n');
+				for (const line of lines) {
+					const trimmed = line.trim();
+					if (!trimmed.startsWith('data:')) continue;
+					const jsonStr = trimmed.slice(5).trim();
+					if (!jsonStr) continue;
+					try {
+						const payload = JSON.parse(jsonStr);
+						onMessage(payload);
+					} catch {
+						// 忽略非 JSON 數據
+					}
+				}
+			}
 		}
 	}
 
@@ -171,6 +236,43 @@ class ApiClient {
 			method: 'POST',
 			body: JSON.stringify(note)
 		});
+	}
+
+	// 語義搜尋
+	async searchNotes(query: string, threshold = 0.7, limit = 10) {
+		return this.request<{ notes: SearchNotesItem[]; count: number }>(`/api/notes/search`, {
+			method: 'POST',
+			body: JSON.stringify({ query, threshold, limit })
+		});
+	}
+
+	// 串流：根據查詢生成 Flashcard（使用 /query 路由，服務端以 SSE 回覆 JSON 包裝）
+	streamFlashcardFromQuery(
+		query: string,
+		onMessage: (payload: unknown) => void,
+		controller?: AbortController
+	) {
+		const aborter = controller ?? new AbortController();
+		void this.streamSSE(`/api/notes/flashcard/query`, { query }, onMessage, aborter.signal).catch(
+			(err) => onMessage({ type: 'error', error: err?.message || 'stream error' })
+		);
+		return aborter;
+	}
+
+	// 串流：根據指定筆記生成 Flashcard（使用 /notes 路由，服務端以 SSE 回覆 JSON 包裝）
+	streamFlashcardFromNotes(
+		noteIds: string[],
+		onMessage: (payload: unknown) => void,
+		controller?: AbortController
+	) {
+		const aborter = controller ?? new AbortController();
+		void this.streamSSE(
+			`/api/notes/flashcard/notes`,
+			{ note_ids: noteIds },
+			onMessage,
+			aborter.signal
+		).catch((err) => onMessage({ type: 'error', error: err?.message || 'stream error' }));
+		return aborter;
 	}
 
 	async getUserNotes(limit: number = 10, offset: number = 0) {

@@ -9,14 +9,25 @@
 		onDeleteNote: (note: Note) => void;
 		onCreateNote: () => void;
 		onFilteredCountChange?: (count: number) => void;
+		onSelectedNotesChange?: (noteIds: string[]) => void;
 	}
 
-	let { notes, onEditNote, onDeleteNote, onCreateNote, onFilteredCountChange }: Props = $props();
+	let {
+		notes,
+		onEditNote,
+		onDeleteNote,
+		onCreateNote,
+		onFilteredCountChange,
+		onSelectedNotesChange
+	}: Props = $props();
 
 	// 過濾和排序狀態
 	let selectedTags = $state<string[]>([]);
 	let sortOrder = $state<'newest' | 'oldest' | 'title'>('newest');
 	let searchQuery = $state('');
+
+	// 笔记选择状态
+	let selectedNotes = $state<Record<string, boolean>>({});
 
 	// 過濾和排序筆記
 	let filteredAndSortedNotes: Note[] = $derived(
@@ -47,6 +58,23 @@
 		}
 	});
 
+	// 當選中的笔记改變時通知父組件
+	$effect(() => {
+		if (onSelectedNotesChange) {
+			const selectedIds = Object.keys(selectedNotes).filter((id) => selectedNotes[id]);
+			onSelectedNotesChange(selectedIds);
+		}
+	});
+
+	// 切換笔记選擇狀態
+	function toggleNoteSelection(noteId: string) {
+		selectedNotes[noteId] = !selectedNotes[noteId];
+		selectedNotes = { ...selectedNotes };
+	}
+
+	// 獲取選中的笔记數量
+	let selectedCount = $derived(Object.values(selectedNotes).filter(Boolean).length);
+
 	// 清除所有過濾器
 	function clearFilters() {
 		selectedTags = [];
@@ -68,17 +96,52 @@
 		onClearFilters={clearFilters}
 	/>
 
+	<!-- 選擇狀態顯示 -->
+	{#if selectedCount > 0}
+		<div class="mb-4 rounded-lg border border-gray-300 bg-blue-50 p-4">
+			<div class="flex items-center justify-between">
+				<div class="text-sm text-gray-700">
+					已選擇 {selectedCount} 篇筆記用於生成閃卡
+				</div>
+				<button
+					onclick={() => {
+						selectedNotes = {};
+					}}
+					class="text-xs text-gray-600 hover:text-gray-800 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+				>
+					清除選擇
+				</button>
+			</div>
+		</div>
+	{/if}
+
 	<!-- 筆記網格 -->
 	{#if filteredAndSortedNotes.length > 0}
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each filteredAndSortedNotes as note (note.id)}
 				<article
-					class="rounded-lg border border-gray-300 bg-white p-6 shadow-sm transition-transform duration-200 hover:scale-105 hover:shadow-md"
+					class="rounded-lg border border-gray-300 bg-white p-6 shadow-sm transition-transform duration-200 hover:scale-105 hover:shadow-md {selectedNotes[
+						note.id
+					]
+						? 'bg-blue-50 ring-2 ring-blue-500'
+						: ''}"
 				>
 					<header class="mb-3 flex items-start justify-between">
-						<h2 class="font-serif text-lg leading-tight font-semibold text-gray-900">
-							{note.title}
-						</h2>
+						<div class="flex flex-1 items-start gap-3">
+							<!-- 選擇复选框 -->
+							<input
+								type="checkbox"
+								checked={!!selectedNotes[note.id]}
+								onchange={() => toggleNoteSelection(note.id)}
+								class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+								aria-label={`選擇筆記 ${note.title}`}
+							/>
+							<div class="flex-1">
+								<h2 class="font-serif text-lg leading-tight font-semibold text-gray-900">
+									{note.title}
+								</h2>
+							</div>
+						</div>
 						<div class="ml-2 flex items-center gap-1">
 							{#if note.is_public}
 								<span

@@ -7,6 +7,7 @@
 	import DeleteConfirmModal from '$lib/components/DeleteConfirmModal.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import WelcomePage from '$lib/components/WelcomePage.svelte';
+	import FlashcardGenerator from '$lib/components/FlashcardGenerator.svelte';
 
 	// 狀態管理
 	let user = $state<User | null>(null);
@@ -24,6 +25,9 @@
 
 	// 過濾和排序狀態（從 NotesList 組件提升到這裡以便在標題中顯示）
 	let filteredNotesCount = $state(0);
+
+	// 供閃卡生成用
+	let selectedNoteIds = $state<string[]>([]);
 
 	// 筆記表單（用於創建和編輯）
 	let noteForm = $state({
@@ -280,8 +284,8 @@
 </script>
 
 <!-- 主要布局容器 -->
-<div class="min-h-dvh bg-[#EDEDED]">
-	<div class="flex min-h-dvh">
+<div class="h-dvh bg-[#EDEDED]">
+	<div class="flex h-full">
 		<!-- 左側導航面板 -->
 		<Sidebar
 			{user}
@@ -296,7 +300,7 @@
 		/>
 
 		<!-- 右側主要內容區域 -->
-		<main class="flex flex-1 flex-col">
+		<main class="flex w-full flex-1 flex-col">
 			{#if user}
 				<!-- 頂部標題欄 -->
 				<header class="border-b border-gray-400 bg-white px-8 py-6 shadow-sm">
@@ -337,31 +341,64 @@
 				</header>
 
 				<!-- 主要內容區域 -->
-				<div class="container mx-auto flex-1 overflow-y-auto px-4 py-8 lg:max-w-screen-lg">
-					{#if currentView === 'notes'}
-						<NotesList
-							notes={userNotes}
-							onEditNote={startEditNote}
-							onDeleteNote={handleDeleteNote}
-							onCreateNote={startCreateNote}
-							onFilteredCountChange={(count) => (filteredNotesCount = count)}
-						/>
-					{:else if currentView === 'create' || currentView === 'edit'}
-						<NoteEditor
-							title={noteForm.title}
-							content={noteForm.content}
-							tags={noteForm.tags}
-							isPublic={noteForm.is_public}
-							{loading}
-							isEditing={currentView === 'edit'}
-							onSave={saveNote}
-							onCancel={() => handleViewChange('notes')}
-							onTitleChange={(value) => (noteForm.title = value)}
-							onContentChange={(value) => (noteForm.content = value)}
-							onTagsChange={(value) => (noteForm.tags = value)}
-							onPublicChange={(value) => (noteForm.is_public = value)}
-						/>
-					{/if}
+				<div class="flex-1 overflow-y-auto">
+					<div class="container mx-auto px-4 py-8 lg:max-w-screen-lg">
+						{#if currentView === 'notes'}
+							<div class="space-y-6">
+								<!-- 闪卡生成区域 -->
+								<div class="grid gap-4 md:grid-cols-2">
+									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
+										<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900">
+											查詢生成閃卡
+										</h3>
+										<FlashcardGenerator mode="query" />
+									</div>
+									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
+										<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900">
+											從筆記生成閃卡
+										</h3>
+										{#if selectedNoteIds.length > 0}
+											<div class="mb-3 text-sm text-gray-700">
+												已選擇 {selectedNoteIds.length} 篇筆記
+											</div>
+											<FlashcardGenerator mode="notes" {selectedNoteIds} />
+										{:else}
+											<div class="py-8 text-center text-gray-500">
+												<p class="text-sm">請在下方筆記列表中勾選想要生成閃卡的筆記</p>
+											</div>
+										{/if}
+									</div>
+								</div>
+
+								<!-- 笔记列表区域 -->
+								<div>
+									<NotesList
+										notes={userNotes}
+										onEditNote={startEditNote}
+										onDeleteNote={handleDeleteNote}
+										onCreateNote={startCreateNote}
+										onFilteredCountChange={(count) => (filteredNotesCount = count)}
+										onSelectedNotesChange={(ids) => (selectedNoteIds = ids)}
+									/>
+								</div>
+							</div>
+						{:else if currentView === 'create' || currentView === 'edit'}
+							<NoteEditor
+								title={noteForm.title}
+								content={noteForm.content}
+								tags={noteForm.tags}
+								isPublic={noteForm.is_public}
+								{loading}
+								isEditing={currentView === 'edit'}
+								onSave={saveNote}
+								onCancel={() => handleViewChange('notes')}
+								onTitleChange={(value) => (noteForm.title = value)}
+								onContentChange={(value) => (noteForm.content = value)}
+								onTagsChange={(value) => (noteForm.tags = value)}
+								onPublicChange={(value) => (noteForm.is_public = value)}
+							/>
+						{/if}
+					</div>
 				</div>
 			{:else}
 				<WelcomePage {apiStatus} />

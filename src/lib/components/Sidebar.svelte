@@ -27,7 +27,7 @@
 </script>
 
 <!-- 左側導航面板 -->
-<aside class="w-1/5 border-r border-gray-400 bg-white shadow-sm">
+<aside class="flex h-full w-1/5 flex-col border-r border-gray-400 bg-white shadow-sm">
 	<!-- 品牌標題 -->
 	<header class="border-b border-gray-300 p-6">
 		<h1 class="font-serif text-xl font-bold text-gray-900">Go Note</h1>
