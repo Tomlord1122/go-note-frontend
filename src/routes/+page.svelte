@@ -8,7 +8,7 @@
 	import Toast from '$lib/components/Toast.svelte';
 	import WelcomePage from '$lib/components/WelcomePage.svelte';
 	import FlashcardGenerator from '$lib/components/FlashcardGenerator.svelte';
-
+	import { PUBLIC_FRONTEND_URL } from '$env/static/public';
 	let user = $state<User | null>(null);
 	let userProfile = $state<UserProfile | null>(null);
 	let loading = $state(false);
@@ -45,7 +45,7 @@
 		loading = true;
 		error = null;
 
-		const response = await api.initiateGoogleLogin('http://localhost:5173');
+		const response = await api.initiateGoogleLogin(PUBLIC_FRONTEND_URL);
 
 		if (response.data?.url) {
 			window.location.href = response.data.url;

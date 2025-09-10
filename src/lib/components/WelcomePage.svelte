@@ -44,7 +44,7 @@
 					<div class="ml-3">
 						<h3 class="text-sm font-medium text-gray-800">API Service Not Running</h3>
 						<p class="mt-1 text-sm text-gray-700">
-							Please ensure the Go API server is running at http://localhost:8080
+							Please ensure the Go API server is running.
 						</p>
 					</div>
 				</div>

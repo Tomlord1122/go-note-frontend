@@ -1,7 +1,7 @@
 // API 配置和工具函數
-
+import { PUBLIC_API_BASE_URL, PUBLIC_FRONTEND_URL } from '$env/static/public';
 // API 基礎 URL
-export const API_BASE = 'http://localhost:8080';
+export const API_BASE = PUBLIC_API_BASE_URL;
 
 // API 響應類型
 export interface ApiResponse<T = unknown> {
@@ -165,7 +165,7 @@ class ApiClient {
 	}
 
 	// 認證相關
-	async initiateGoogleLogin(redirectUrl: string = 'http://localhost:5173') {
+	async initiateGoogleLogin(redirectUrl: string = PUBLIC_FRONTEND_URL) {
 		return this.request<OAuthResponse>('/auth/google/login', {
 			method: 'POST',
 			body: JSON.stringify({ redirect_url: redirectUrl })
