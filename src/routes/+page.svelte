@@ -9,7 +9,6 @@
 	import WelcomePage from '$lib/components/WelcomePage.svelte';
 	import FlashcardGenerator from '$lib/components/FlashcardGenerator.svelte';
 
-	// 狀態管理
 	let user = $state<User | null>(null);
 	let userProfile = $state<UserProfile | null>(null);
 	let loading = $state(false);
@@ -18,18 +17,14 @@
 	let apiStatus = $state<'checking' | 'online' | 'offline' | 'error'>('checking');
 	let userNotes = $state<Note[]>([]);
 
-	// UI 狀態
 	let currentView = $state<'notes' | 'create' | 'edit'>('notes');
 	let selectedNote = $state<Note | null>(null);
 	let showDeleteConfirm = $state(false);
 
-	// 過濾和排序狀態（從 NotesList 組件提升到這裡以便在標題中顯示）
 	let filteredNotesCount = $state(0);
 
-	// 供閃卡生成用
 	let selectedNoteIds = $state<string[]>([]);
 
-	// 筆記表單（用於創建和編輯）
 	let noteForm = $state({
 		title: '',
 		content: '',
@@ -37,7 +32,6 @@
 		is_public: false
 	});
 
-	// 檢查 API 狀態
 	async function checkApiStatus() {
 		const response = await api.healthCheck();
 		if (response.data) {
@@ -47,7 +41,6 @@
 		}
 	}
 
-	// Google OAuth 登錄
 	async function handleGoogleLogin() {
 		loading = true;
 		error = null;
@@ -57,12 +50,11 @@
 		if (response.data?.url) {
 			window.location.href = response.data.url;
 		} else {
-			error = `登錄失敗: ${response.error || '未知錯誤'}`;
+			error = `Login failed: ${response.error || 'Unknown error'}`;
 			loading = false;
 		}
 	}
 
-	// 登出
 	function handleLogout() {
 		authStore.logout();
 		user = null;
@@ -70,15 +62,14 @@
 		currentView = 'notes';
 	}
 
-	// 創建或更新筆記
 	async function saveNote() {
 		if (!user) {
-			error = '請先登錄';
+			error = 'Please login first';
 			return;
 		}
 
 		if (!noteForm.title.trim() || !noteForm.content.trim()) {
-			error = '標題和內容不能為空';
+			error = 'Title and content cannot be empty';
 			return;
 		}
 
@@ -110,17 +101,16 @@
 			selectedNote = null;
 			await loadUserNotes();
 
-			const action = isEditing ? '更新' : '創建';
-			showSuccessToast(`筆記${action}成功！`);
+			const action = isEditing ? 'updated' : 'created';
+			showSuccessToast(`Note ${action} successfully!`);
 		} else {
-			const action = isEditing ? '更新' : '創建';
-			error = `${action}筆記失敗: ${response.error}`;
+			const action = isEditing ? 'update' : 'create';
+			error = `Failed to ${action} note: ${response.error}`;
 		}
 
 		loading = false;
 	}
 
-	// 重置表單
 	function resetForm() {
 		noteForm.title = '';
 		noteForm.content = '';
@@ -128,14 +118,12 @@
 		noteForm.is_public = false;
 	}
 
-	// 開始創建新筆記
 	function startCreateNote() {
 		resetForm();
 		currentView = 'create';
 		selectedNote = null;
 	}
 
-	// 開始編輯筆記
 	function startEditNote(note: Note) {
 		noteForm.title = note.title;
 		noteForm.content = note.content;
@@ -145,10 +133,9 @@
 		currentView = 'edit';
 	}
 
-	// 刪除筆記
 	async function deleteNote(note: Note) {
 		if (!user) {
-			error = '請先登錄';
+			error = 'Please login first';
 			return;
 		}
 
@@ -159,21 +146,20 @@
 
 		if (!response.error) {
 			await loadUserNotes();
-			showSuccessToast('筆記刪除成功！');
+			showSuccessToast('Note deleted successfully!');
 
 			if (selectedNote?.id === note.id) {
 				currentView = 'notes';
 				selectedNote = null;
 			}
 		} else {
-			error = `刪除筆記失敗: ${response.error}`;
+			error = `Failed to delete note: ${response.error}`;
 		}
 
 		showDeleteConfirm = false;
 		loading = false;
 	}
 
-	// 顯示成功消息
 	function showSuccessToast(message: string) {
 		successMessage = message;
 		setTimeout(() => {
@@ -181,7 +167,6 @@
 		}, 3000);
 	}
 
-	// 加載用戶筆記
 	async function loadUserNotes() {
 		if (!user) return;
 
@@ -194,7 +179,6 @@
 		}
 	}
 
-	// 視圖切換處理器
 	function handleViewChange(view: 'notes' | 'create' | 'edit') {
 		currentView = view;
 		if (view === 'notes') {
@@ -203,13 +187,11 @@
 		}
 	}
 
-	// 刪除筆記處理器
 	function handleDeleteNote(note: Note) {
 		selectedNote = note;
 		showDeleteConfirm = true;
 	}
 
-	// 組件掛載時執行
 	onMount(() => {
 		const initialize = async () => {
 			await checkApiStatus();
@@ -245,7 +227,6 @@
 		};
 	});
 
-	// 處理 OAuth 回調
 	function handleOAuthCallback() {
 		const hash = window.location.hash;
 		if (hash.includes('access_token')) {
@@ -283,13 +264,10 @@
 	}
 </script>
 
-<!-- 主要布局容器 -->
 <div class="h-dvh bg-[#EDEDED]">
 	<div class="flex h-full">
-		<!-- 左側導航面板 -->
 		<Sidebar
 			{user}
-			{userProfile}
 			{apiStatus}
 			{currentView}
 			userNotesCount={userNotes?.length || 0}
@@ -299,24 +277,26 @@
 			onLogout={handleLogout}
 		/>
 
-		<!-- 右側主要內容區域 -->
 		<main class="flex w-full flex-1 flex-col">
 			{#if user}
-				<!-- 頂部標題欄 -->
-				<header class="border-b border-gray-400 bg-white px-8 py-6 shadow-sm">
+				<header
+					class="border-b border-gray-300 bg-[#EFEFEF] px-8 py-6 shadow-lg backdrop:opacity-50"
+				>
 					<div class="flex items-center justify-between">
 						<div>
 							{#if currentView === 'notes'}
-								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">我的筆記</h1>
+								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">My Notes</h1>
 								<p class="text-sm text-gray-600">
 									{filteredNotesCount > 0 && filteredNotesCount !== (userNotes?.length || 0)
-										? `顯示 ${filteredNotesCount} / ${userNotes?.length || 0} 篇筆記`
-										: `${userNotes?.length || 0} 篇筆記`}
+										? `Showing ${filteredNotesCount} / ${userNotes?.length || 0} notes`
+										: `${userNotes?.length || 0} notes`}
 								</p>
 							{:else if currentView === 'create'}
-								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">創建新筆記</h1>
+								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">
+									Create New Note
+								</h1>
 							{:else if currentView === 'edit'}
-								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">編輯筆記</h1>
+								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">Edit Note</h1>
 							{/if}
 						</div>
 
@@ -324,7 +304,7 @@
 							<button
 								onclick={() => handleViewChange('notes')}
 								class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
-								aria-label="返回筆記列表"
+								aria-label="Back to notes list"
 							>
 								<svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -334,43 +314,42 @@
 										d="M10 19l-7-7m0 0l7-7m-7 7h18"
 									></path>
 								</svg>
-								返回
+								Back
 							</button>
 						{/if}
 					</div>
 				</header>
 
-				<!-- 主要內容區域 -->
 				<div class="flex-1 overflow-y-auto">
 					<div class="container mx-auto px-4 py-8 lg:max-w-screen-lg">
 						{#if currentView === 'notes'}
 							<div class="space-y-6">
-								<!-- 闪卡生成区域 -->
 								<div class="grid gap-4 md:grid-cols-2">
 									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
 										<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900">
-											查詢生成閃卡
+											Generate Flashcard by Query
 										</h3>
 										<FlashcardGenerator mode="query" />
 									</div>
 									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
 										<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900">
-											從筆記生成閃卡
+											Generate Flashcard from Notes
 										</h3>
 										{#if selectedNoteIds.length > 0}
 											<div class="mb-3 text-sm text-gray-700">
-												已選擇 {selectedNoteIds.length} 篇筆記
+												Selected {selectedNoteIds.length} notes
 											</div>
 											<FlashcardGenerator mode="notes" {selectedNoteIds} />
 										{:else}
 											<div class="py-8 text-center text-gray-500">
-												<p class="text-sm">請在下方筆記列表中勾選想要生成閃卡的筆記</p>
+												<p class="text-sm">
+													Please select notes from the list below to generate flashcards
+												</p>
 											</div>
 										{/if}
 									</div>
 								</div>
 
-								<!-- 笔记列表区域 -->
 								<div>
 									<NotesList
 										notes={userNotes}
@@ -407,11 +386,9 @@
 	</div>
 </div>
 
-<!-- 通知組件 -->
 <Toast message={error} type="error" onClose={() => (error = null)} />
 <Toast message={successMessage} type="success" onClose={() => (successMessage = null)} />
 
-<!-- 刪除確認 Modal -->
 <DeleteConfirmModal
 	show={showDeleteConfirm}
 	note={selectedNote}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Flashcard } from '$lib/api.js';
+	import { renderMarkdown } from '$lib/utils/markdown.js';
 
 	interface Props {
 		show: boolean;
@@ -11,15 +12,13 @@
 
 	let copySuccess = $state(false);
 
-	// 生成简化的问答内容（只包含问题和答案）
 	function generateSimpleQA(): string {
 		if (!flashcard) return '';
 
-		let content = `Q: ${flashcard.question}\n\n`;
-		content += `A: ${flashcard.answer}`;
+		let content = `${flashcard.answer}`;
 
 		if (flashcard.explanation) {
-			content += `\n\n解釋: ${flashcard.explanation}`;
+			content += `\n\nExplanation: ${flashcard.explanation}`;
 		}
 
 		return content;
@@ -85,7 +84,7 @@
 					<button
 						onclick={onClose}
 						class="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
-						aria-label="關閉"
+						aria-label="Close"
 					>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -104,10 +103,11 @@
 				<div class="space-y-8">
 					<!-- Answer -->
 					<div>
-						<h3 class="mb-4 font-serif text-xl font-semibold text-gray-900">答案</h3>
+						<h3 class="mb-4 font-serif text-xl font-semibold text-gray-900">Answer</h3>
 						<div class="rounded-lg bg-green-50 p-6">
-							<div class="prose prose-lg font-serif whitespace-pre-line text-gray-800">
-								{flashcard.answer}
+							<div class="prose prose-lg font-serif text-gray-800">
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+								{@html renderMarkdown(flashcard.answer)}
 							</div>
 						</div>
 					</div>
@@ -115,10 +115,13 @@
 					<!-- Explanation -->
 					{#if flashcard.explanation}
 						<div>
-							<h3 class="mb-4 font-serif text-xl font-semibold text-gray-900">詳細解釋</h3>
+							<h3 class="mb-4 font-serif text-xl font-semibold text-gray-900">
+								Detailed Explanation
+							</h3>
 							<div class="rounded-lg bg-gray-50 p-6">
-								<div class="prose prose-lg font-serif whitespace-pre-line text-gray-700">
-									{flashcard.explanation}
+								<div class="prose prose-lg font-serif text-gray-700">
+									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+									{@html renderMarkdown(flashcard.explanation)}
 								</div>
 							</div>
 						</div>
@@ -140,14 +143,14 @@
 							d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
 						></path>
 					</svg>
-					{copySuccess ? '已複製！' : '複製問答內容'}
+					{copySuccess ? 'Copied!' : 'Copy Q&A Content'}
 				</button>
 
 				<button
 					onclick={onClose}
 					class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
 				>
-					關閉
+					Close
 				</button>
 			</footer>
 		</div>

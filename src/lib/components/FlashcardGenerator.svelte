@@ -51,25 +51,25 @@
 				appendLog(streamPayload?.message ?? '');
 			} else if (streamPayload?.type === 'complete') {
 				finalCard = streamPayload?.data as Flashcard;
-				appendLog('[complete] 完成');
+				appendLog('[complete] Complete');
 				streaming = false;
-				showModal = true; // 自動顯示彈窗
+				showModal = true;
 			} else if (streamPayload?.type === 'error') {
-				error = streamPayload?.error || '串流錯誤';
+				error = streamPayload?.error || 'Stream error';
 				streaming = false;
 			}
 		};
 
 		if (mode === 'query') {
 			if (!query.trim()) {
-				error = '請輸入查詢文字';
+				error = 'Please enter a query';
 				streaming = false;
 				return;
 			}
 			controller = api.streamFlashcardFromQuery(query, onMessage, controller);
 		} else {
 			if (!selectedNoteIds?.length) {
-				error = '請先選擇至少一個筆記';
+				error = 'Please select at least one note';
 				streaming = false;
 				return;
 			}
@@ -84,7 +84,7 @@
 			id="flashcard-query"
 			value={query}
 			oninput={(e) => (query = (e.target as HTMLInputElement).value)}
-			placeholder="輸入你想學習的主題..."
+			placeholder="Enter the topic you want to learn..."
 			class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:ring-gray-500"
 		/>
 		<button
@@ -92,7 +92,7 @@
 			class="w-full rounded-md bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none disabled:bg-gray-400"
 			disabled={streaming || !query.trim()}
 		>
-			{streaming ? '生成中...' : '生成閃卡'}
+			{streaming ? 'Generating...' : 'Generate Flashcard'}
 		</button>
 	</div>
 {:else}
@@ -101,7 +101,7 @@
 		class="w-full rounded-md bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none disabled:bg-gray-400"
 		disabled={streaming || !selectedNoteIds?.length}
 	>
-		{streaming ? '生成中...' : '生成閃卡'}
+		{streaming ? 'Generating...' : 'Generate Flashcard'}
 	</button>
 {/if}
 
@@ -124,13 +124,13 @@
 						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 					></path>
 				</svg>
-				<span class="text-sm text-blue-700">正在生成閃卡...</span>
+				<span class="text-sm text-blue-700">Generating flashcard...</span>
 			</div>
 			<button
 				onclick={stop}
 				class="text-xs text-blue-600 hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
 			>
-				停止
+				Stop
 			</button>
 		</div>
 		{#if logs.length > 0}
@@ -141,5 +141,4 @@
 	</div>
 {/if}
 
-<!-- Flashcard Modal -->
 <FlashcardModal show={showModal} flashcard={finalCard} onClose={() => (showModal = false)} />

@@ -3,32 +3,27 @@
 	import { browser } from '$app/environment';
 
 	let status = $state<'processing' | 'success' | 'error'>('processing');
-	let message = $state<string>('正在處理登錄...');
+	let message = $state<string>('Processing...');
 
 	onMount(() => {
 		if (!browser) return;
-
-		// 處理 OAuth 回調
 		handleOAuthCallback();
 	});
 
 	async function handleOAuthCallback() {
 		try {
-			// 檢查 URL 中是否有 access_token（通常在 hash 中）
 			const hash = window.location.hash;
 			const search = window.location.search;
 
 			let accessToken = '';
 			let refreshToken = '';
 
-			// 嘗試從 hash 中提取 token（Supabase OAuth 通常使用 hash）
 			if (hash) {
 				const hashParams = new URLSearchParams(hash.substring(1));
 				accessToken = hashParams.get('access_token') || '';
 				refreshToken = hashParams.get('refresh_token') || '';
 			}
 
-			// 如果 hash 中沒有，嘗試從 query parameters 中提取
 			if (!accessToken && search) {
 				const searchParams = new URLSearchParams(search);
 				accessToken = searchParams.get('access_token') || '';
@@ -36,18 +31,15 @@
 			}
 
 			if (accessToken) {
-				// 保存 tokens
 				localStorage.setItem('access_token', accessToken);
 				if (refreshToken) {
 					localStorage.setItem('refresh_token', refreshToken);
 				}
 
-				// 2秒後重定向到首頁
 				setTimeout(() => {
 					window.location.replace('/');
 				}, 2000);
 			} else {
-				// 檢查是否有錯誤
 				const errorParam =
 					new URLSearchParams(search).get('error') ||
 					new URLSearchParams(hash.substring(1)).get('error');
@@ -58,16 +50,16 @@
 						new URLSearchParams(hash.substring(1)).get('error_description');
 
 					status = 'error';
-					message = `登錄失敗: ${errorDescription || errorParam}`;
+					message = `Login failed: ${errorDescription || errorParam}`;
 				} else {
 					status = 'error';
-					message = '未收到有效的登錄憑證';
+					message = 'No valid login credentials received';
 				}
 			}
 		} catch (error) {
 			console.error('OAuth callback error:', error);
 			status = 'error';
-			message = `處理登錄時發生錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`;
+			message = `Error processing login: ${error instanceof Error ? error.message : 'Unknown error'}`;
 		}
 	}
 
@@ -82,7 +74,6 @@
 	<div class="w-full max-w-md">
 		<div class="rounded-lg bg-white p-8 text-center shadow-md">
 			{#if status === 'processing'}
-				<!-- 處理中 -->
 				<div
 					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100"
 				>
@@ -96,10 +87,9 @@
 						></path>
 					</svg>
 				</div>
-				<h2 class="mb-2 text-xl font-semibold text-gray-900">處理登錄中</h2>
+				<h2 class="mb-2 text-xl font-semibold text-gray-900">Processing login</h2>
 				<p class="text-gray-600">{message}</p>
 			{:else if status === 'success'}
-				<!-- 成功 -->
 				<div
 					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100"
 				>
@@ -108,16 +98,15 @@
 						></path>
 					</svg>
 				</div>
-				<h2 class="mb-2 text-xl font-semibold text-gray-900">登錄成功</h2>
+				<h2 class="mb-2 text-xl font-semibold text-gray-900">Login successful</h2>
 				<p class="mb-6 text-gray-600">{message}</p>
 				<button
 					onclick={goHome}
 					class="rounded-md bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700"
 				>
-					返回首頁
+					Back to Home
 				</button>
 			{:else}
-				<!-- 錯誤 -->
 				<div
 					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100"
 				>
@@ -130,27 +119,15 @@
 						></path>
 					</svg>
 				</div>
-				<h2 class="mb-2 text-xl font-semibold text-gray-900">登錄失敗</h2>
+				<h2 class="mb-2 text-xl font-semibold text-gray-900">Login failed</h2>
 				<p class="mb-6 text-gray-600">{message}</p>
 				<button
 					onclick={goHome}
 					class="rounded-md bg-red-600 px-6 py-2 font-medium text-white transition-colors hover:bg-red-700"
 				>
-					返回首頁
+					Back to Home
 				</button>
 			{/if}
 		</div>
-
-		<!-- 調試信息 -->
-		{#if browser}
-			<div class="mt-4 rounded-lg bg-white p-4 shadow-md">
-				<h3 class="mb-2 text-sm font-semibold text-gray-700">調試信息</h3>
-				<div class="space-y-1 text-xs text-gray-500">
-					<p><strong>URL Hash:</strong> {window.location.hash || '無'}</p>
-					<p><strong>URL Search:</strong> {window.location.search || '無'}</p>
-					<p><strong>Complete URL:</strong> {window.location.href}</p>
-				</div>
-			</div>
-		{/if}
 	</div>
 </div>

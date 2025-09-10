@@ -41,12 +41,15 @@
 						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 					></path>
 				</svg>
-				<h2 id="delete-title" class="font-serif text-lg font-semibold text-gray-900">確認刪除</h2>
+				<h2 id="delete-title" class="font-serif text-lg font-semibold text-gray-900">
+					Confirm deletion
+				</h2>
 			</header>
 
 			<div class="prose prose-sm mb-6 font-serif text-gray-700">
 				<p id="delete-description">
-					你確定要刪除筆記「<span class="font-medium">{note.title}</span>」嗎？此操作無法撤銷。
+					Are you sure you want to delete the note "<span class="font-medium">{note.title}</span>"?
+					This action cannot be undone.
 				</p>
 			</div>
 
@@ -56,7 +59,7 @@
 					disabled={loading}
 					class="inline-flex items-center justify-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none disabled:opacity-50"
 				>
-					取消
+					Cancel
 				</button>
 				<button
 					onclick={() => onConfirm(note)}
@@ -79,9 +82,9 @@
 								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 							></path>
 						</svg>
-						刪除中...
+						Deleting...
 					{:else}
-						確認刪除
+						Confirm deletion
 					{/if}
 				</button>
 			</footer>

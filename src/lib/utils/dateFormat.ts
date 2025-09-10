@@ -1,5 +1,3 @@
-// 日期格式化工具函數
-
 export function formatDate(dateString: string): string {
 	const date = new Date(dateString);
 	return date.toLocaleDateString('zh-TW', {
@@ -27,20 +25,20 @@ export function formatRelativeTime(dateString: string): string {
 	const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
 	if (diffInDays === 0) {
-		return '今天';
+		return 'Today';
 	} else if (diffInDays === 1) {
-		return '昨天';
+		return 'Yesterday';
 	} else if (diffInDays < 7) {
-		return `${diffInDays} 天前`;
+		return `${diffInDays} days ago`;
 	} else if (diffInDays < 30) {
 		const weeks = Math.floor(diffInDays / 7);
-		return `${weeks} 週前`;
+		return `${weeks} weeks ago`;
 	} else if (diffInDays < 365) {
 		const months = Math.floor(diffInDays / 30);
-		return `${months} 個月前`;
+		return `${months} months ago`;
 	} else {
 		const years = Math.floor(diffInDays / 365);
-		return `${years} 年前`;
+		return `${years} years ago`;
 	}
 }
 
@@ -51,13 +49,12 @@ export function getTimeDisplayText(
 	const created = new Date(createdAt);
 	const updated = new Date(updatedAt);
 
-	// 如果創建時間和更新時間相差超過 1 分鐘，顯示更新時間
 	const diffInMinutes = Math.abs(updated.getTime() - created.getTime()) / (1000 * 60);
 
 	if (diffInMinutes > 1) {
 		return {
 			primary: formatRelativeTime(updatedAt),
-			secondary: `創建於 ${formatDate(createdAt)}`
+			secondary: `Created on ${formatDate(createdAt)}`
 		};
 	} else {
 		return {

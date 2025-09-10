@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { User, UserProfile } from '$lib/api.js';
+	import type { User } from '$lib/api.js';
 
 	interface Props {
 		user: User | null;
-		userProfile: UserProfile | null;
 		apiStatus: 'checking' | 'online' | 'offline' | 'error';
 		currentView: 'notes' | 'create' | 'edit';
 		userNotesCount: number;
@@ -15,7 +14,6 @@
 
 	let {
 		user,
-		userProfile,
 		apiStatus,
 		currentView,
 		userNotesCount,
@@ -26,11 +24,14 @@
 	}: Props = $props();
 </script>
 
-<!-- 左側導航面板 -->
-<aside class="flex h-full w-1/5 flex-col border-r border-gray-400 bg-white shadow-sm">
-	<!-- 品牌標題 -->
-	<header class="border-b border-gray-300 p-6">
-		<h1 class="font-serif text-xl font-bold text-gray-900">Go Note</h1>
+<!-- Left navigation panel -->
+<aside class="shadow-m flex h-full w-1/5 flex-col border-r border-gray-400 bg-[#EDEDED]">
+	<!-- Brand header -->
+	<header class=" border-gray-300 p-6">
+		<div class="flex items-center gap-2">
+			<img src="/app_icon.webp" alt="Go Note" class="h-10 w-10" />
+			<h1 class="font-serif text-xl font-bold text-gray-900">Go Note</h1>
+		</div>
 		<div class="mt-2 flex items-center">
 			<div
 				class="mr-2 h-2 w-2 rounded-full {apiStatus === 'online'
@@ -38,65 +39,29 @@
 					: apiStatus === 'offline'
 						? 'bg-gray-800'
 						: 'bg-gray-400'}"
-				aria-label="API 狀態"
+				aria-label="API Status"
 			></div>
 			<span class="text-xs text-gray-600">
-				{apiStatus === 'online' ? 'API 運行中' : apiStatus === 'offline' ? 'API 離線' : '檢查中'}
+				{apiStatus === 'online'
+					? 'API Running'
+					: apiStatus === 'offline'
+						? 'API Offline'
+						: 'Checking'}
 			</span>
 		</div>
 	</header>
 
 	{#if user}
-		<!-- 用戶資訊 -->
-		<div class="border-b border-gray-300 p-6">
-			<div class="text-center">
-				{#if user.metadata?.picture}
-					<img
-						src={user.metadata.picture as string}
-						alt="用戶頭像"
-						class="mx-auto mb-3 h-12 w-12 rounded-full border border-gray-200"
-					/>
-				{:else}
-					<div
-						class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200"
-					>
-						<svg
-							class="h-6 w-6 text-gray-500"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-							></path>
-						</svg>
-					</div>
-				{/if}
-				<div class="text-sm">
-					{#if user.metadata?.full_name}
-						<p class="font-medium text-gray-900">{user.metadata.full_name}</p>
-					{/if}
-					<p class="truncate text-gray-600">{user.email}</p>
-					{#if userProfile?.username}
-						<p class="mt-1 text-xs text-gray-500">@{userProfile.username}</p>
-					{/if}
-				</div>
-			</div>
-		</div>
-
-		<!-- 導航選單 -->
-		<nav class="flex-1 p-4" aria-label="主要導航">
+		<!-- Navigation menu -->
+		<nav class="flex-1 p-4" aria-label="Main navigation">
 			<ul class="space-y-2">
 				<li>
 					<button
 						onclick={() => onViewChange('notes')}
-						class="flex w-full items-center rounded-md px-3 py-2 text-left text-sm font-medium transition-colors duration-200 {currentView ===
+						class="flex w-full items-center rounded-md border border-gray-300 px-3 py-2 text-left text-sm font-medium transition-colors duration-200 {currentView ===
 						'notes'
-							? 'bg-gray-200 text-gray-900'
-							: 'text-gray-700 hover:bg-gray-100'}"
+							? 'text-gray-700 hover:bg-gray-200'
+							: 'bg-gray-100 text-gray-900'}"
 						aria-pressed={currentView === 'notes'}
 					>
 						<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +72,7 @@
 								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 							></path>
 						</svg>
-						我的筆記
+						My Notes
 						{#if userNotesCount > 0}
 							<span class="ml-auto text-xs text-gray-500">({userNotesCount})</span>
 						{/if}
@@ -116,10 +81,10 @@
 				<li>
 					<button
 						onclick={() => onViewChange('create')}
-						class="flex w-full items-center rounded-md px-3 py-2 text-left text-sm font-medium transition-colors duration-200 {currentView ===
+						class="flex w-full items-center rounded-md border border-gray-300 px-3 py-2 text-left text-sm font-medium transition-colors duration-200 {currentView ===
 						'create'
-							? 'bg-gray-200 text-gray-900'
-							: 'text-gray-700 hover:bg-gray-100'}"
+							? 'text-gray-700bg-gray-300'
+							: 'bg-gray-100 text-gray-900'}"
 						aria-pressed={currentView === 'create'}
 					>
 						<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,13 +95,13 @@
 								d="M12 4v16m8-8H4"
 							></path>
 						</svg>
-						新建筆記
+						New Note
 					</button>
 				</li>
 			</ul>
 		</nav>
 
-		<!-- 登出按鈕 -->
+		<!-- Logout button -->
 		<div class="border-t border-gray-300 p-4">
 			<button
 				onclick={onLogout}
@@ -150,11 +115,11 @@
 						d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
 					></path>
 				</svg>
-				登出
+				Logout
 			</button>
 		</div>
 	{:else}
-		<!-- 未登錄導航 -->
+		<!-- Unauthenticated navigation -->
 		<div class="flex flex-1 flex-col justify-center p-6">
 			<div class="text-center">
 				<div
@@ -169,7 +134,7 @@
 						></path>
 					</svg>
 				</div>
-				<p class="mb-4 text-sm text-gray-600">請登錄以開始使用</p>
+				<p class="mb-4 text-sm text-gray-600">Please login to get started</p>
 				<button
 					onclick={onGoogleLogin}
 					disabled={loading || apiStatus !== 'online'}
@@ -191,7 +156,7 @@
 								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 							></path>
 						</svg>
-						登錄中...
+						Logging in...
 					{:else}
 						<svg class="mr-2 h-4 w-4" viewBox="0 0 24 24">
 							<path
@@ -211,12 +176,12 @@
 								d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
 							/>
 						</svg>
-						使用 Google 登錄
+						Login with Google
 					{/if}
 				</button>
 
 				{#if apiStatus !== 'online'}
-					<p class="mt-2 text-xs text-gray-600">API 服務未運行</p>
+					<p class="mt-2 text-xs text-gray-600">API service is not running</p>
 				{/if}
 			</div>
 		</div>

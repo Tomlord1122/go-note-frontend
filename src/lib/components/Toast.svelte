@@ -40,7 +40,7 @@
 					onclick={onClose}
 					class="mt-2 text-xs text-gray-600 hover:text-gray-500 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
 				>
-					關閉
+					Close
 				</button>
 			</div>
 		</div>

@@ -23,7 +23,6 @@
 		onClearFilters
 	}: Props = $props();
 
-	// 從所有筆記中提取唯一標籤
 	let allTags: string[] = $derived(
 		notes
 			.flatMap((note) => note.tags)
@@ -31,7 +30,6 @@
 			.sort()
 	);
 
-	// 切換標籤選擇
 	function toggleTag(tag: string) {
 		if (selectedTags.includes(tag)) {
 			onTagsChange(selectedTags.filter((t) => t !== tag));
@@ -40,15 +38,12 @@
 		}
 	}
 
-	// 檢查是否有活躍的過濾器
 	let hasActiveFilters = $derived(
 		() => selectedTags.length > 0 || sortOrder !== 'newest' || searchQuery.trim() !== ''
 	);
 </script>
 
-<!-- 過濾器和排序控制 -->
 <div class="mb-6 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
-	<!-- 搜索欄 -->
 	<div class="mb-4">
 		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700">搜索筆記</label>
 		<div class="relative">
@@ -70,14 +65,14 @@
 				type="text"
 				value={searchQuery}
 				oninput={(e) => onSearchChange((e.target as HTMLInputElement).value)}
-				placeholder="搜索標題或內容..."
+				placeholder="Search title or content..."
 				class="w-full rounded-md border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500"
 			/>
 			{#if searchQuery.trim() !== ''}
 				<button
 					onclick={() => onSearchChange('')}
 					class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-					aria-label="清除搜索"
+					aria-label="Clear search"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -93,7 +88,6 @@
 	</div>
 
 	<div class="flex flex-wrap items-center justify-between gap-4">
-		<!-- 排序控制 -->
 		<div class="flex items-center gap-2">
 			<label for="sort-select" class="text-sm font-medium text-gray-700">排序:</label>
 			<select
@@ -103,13 +97,12 @@
 					onSortChange((e.target as HTMLSelectElement).value as 'newest' | 'oldest' | 'title')}
 				class="rounded-md border-gray-300 px-3 py-1 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500"
 			>
-				<option value="newest">最新優先</option>
-				<option value="oldest">最舊優先</option>
-				<option value="title">按標題排序</option>
+				<option value="newest">Newest first</option>
+				<option value="oldest">Oldest first</option>
+				<option value="title">Sort by title</option>
 			</select>
 		</div>
 
-		<!-- 清除過濾器按鈕 -->
 		{#if hasActiveFilters()}
 			<button
 				onclick={onClearFilters}
@@ -123,16 +116,15 @@
 						d="M6 18L18 6M6 6l12 12"
 					></path>
 				</svg>
-				清除過濾器
+				Clear filters
 			</button>
 		{/if}
 	</div>
 
-	<!-- 標籤過濾器 -->
 	{#if allTags.length > 0}
 		<div class="mt-4 border-t border-gray-200 pt-4">
 			<label for="tag-select" class="mb-2 block text-sm font-medium text-gray-700"
-				>按標籤過濾:</label
+				>Filter by tags:</label
 			>
 			<div class="flex flex-wrap gap-2">
 				{#each allTags as tag (tag)}
@@ -162,20 +154,19 @@
 		</div>
 	{/if}
 
-	<!-- 過濾器狀態顯示 -->
 	<div class="mt-3 text-xs text-gray-600">
 		{#if selectedTags.length > 0 || searchQuery.trim() !== ''}
 			{#if searchQuery.trim() !== ''}
-				<span>搜索: "{searchQuery}"</span>
+				<span>Search: "{searchQuery}"</span>
 				{#if selectedTags.length > 0}
 					<span class="mx-2">•</span>
 				{/if}
 			{/if}
 			{#if selectedTags.length > 0}
-				<span>已選擇 {selectedTags.length} 個標籤: {selectedTags.join(', ')}</span>
+				<span>Selected {selectedTags.length} tags: {selectedTags.join(', ')}</span>
 			{/if}
 		{:else}
-			<span>未選擇標籤</span>
+			<span>No tags selected</span>
 		{/if}
 	</div>
 </div>

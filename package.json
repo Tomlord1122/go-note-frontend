@@ -63,5 +63,11 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"@types/dompurify": "^3.2.0",
+		"@types/marked": "^6.0.0",
+		"dompurify": "^3.2.6",
+		"marked": "^16.2.1"
 	}
 }
