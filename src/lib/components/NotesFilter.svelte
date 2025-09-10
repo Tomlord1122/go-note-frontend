@@ -45,7 +45,7 @@
 
 <div class="mb-6 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
 	<div class="mb-4">
-		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700">搜索筆記</label>
+		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700">Search notes</label>
 		<div class="relative">
 			<svg
 				class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
@@ -89,7 +89,7 @@
 
 	<div class="flex flex-wrap items-center justify-between gap-4">
 		<div class="flex items-center gap-2">
-			<label for="sort-select" class="text-sm font-medium text-gray-700">排序:</label>
+			<label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
 			<select
 				id="sort-select"
 				value={sortOrder}
