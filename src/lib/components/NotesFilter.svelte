@@ -45,7 +45,9 @@
 
 <div class="mb-6 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
 	<div class="mb-4">
-		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700">Search notes</label>
+		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700"
+			>Search notes</label
+		>
 		<div class="relative">
 			<svg
 				class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"

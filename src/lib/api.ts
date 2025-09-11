@@ -1,9 +1,9 @@
-// API 配置和工具函數
+// API configuration and utility functions
 import { PUBLIC_API_BASE_URL, PUBLIC_FRONTEND_URL } from '$env/static/public';
-// API 基礎 URL
+// API base URL
 export const API_BASE = PUBLIC_API_BASE_URL;
 
-// API 響應類型
+// API response type
 export interface ApiResponse<T = unknown> {
 	data?: T;
 	error?: string;
@@ -37,12 +37,12 @@ export interface Note {
 	updated_at: string;
 }
 
-// 向量搜尋結果項
+// Vector search result item
 export interface SearchNotesItem extends Note {
 	similarity: number;
 }
 
-// 閃卡型別
+// Flashcard type
 export interface Flashcard {
 	question: string;
 	answer: string;
@@ -56,15 +56,16 @@ export interface OAuthResponse {
 	message: string;
 }
 
-// API 請求工具函數
+// API request utility functions
 class ApiClient {
 	private baseUrl: string;
+	private isRedirectingToLogin = false;
 
 	constructor(baseUrl: string = API_BASE) {
 		this.baseUrl = baseUrl;
 	}
 
-	// 獲取認證 headers
+	// Get authentication headers
 	private getAuthHeaders(): HeadersInit {
 		const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 		return {
@@ -73,7 +74,29 @@ class ApiClient {
 		};
 	}
 
-	// 通用請求方法
+	// Handle authentication error and redirect to login page
+	private handleAuthError() {
+		if (this.isRedirectingToLogin) return;
+		this.isRedirectingToLogin = true;
+
+		// Clear authentication state
+		if (typeof window !== 'undefined') {
+			localStorage.removeItem('access_token');
+			localStorage.removeItem('refresh_token');
+		}
+
+		// Notify AuthStore that user has logged out
+		AuthStore.getInstance().setUser(null);
+
+		// Delay resetting flag to avoid multiple redirects
+		setTimeout(() => {
+			this.isRedirectingToLogin = false;
+		}, 1000);
+
+		console.log('Token expired or invalid, user logged out');
+	}
+
+	// Generic request method
 	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 		try {
 			const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -81,12 +104,20 @@ class ApiClient {
 				...options
 			});
 
-			// 處理 204 No Content 響應（如 DELETE 操作）
+			// Handle 401 unauthorized response - invalid or expired token
+			if (response.status === 401) {
+				this.handleAuthError();
+				return {
+					error: 'Authentication failed. Please login again.'
+				};
+			}
+
+			// Handle 204 No Content response (like DELETE operations)
 			if (response.status === 204) {
 				return { data: {} as T };
 			}
 
-			// 嘗試解析 JSON，如果失敗則返回空對象
+			// Try to parse JSON, return empty object if failed
 			let data;
 			try {
 				data = await response.json();
@@ -103,12 +134,12 @@ class ApiClient {
 			return { data };
 		} catch (error) {
 			return {
-				error: error instanceof Error ? error.message : '網路錯誤'
+				error: error instanceof Error ? error.message : 'Network error'
 			};
 		}
 	}
 
-	// 讀取 SSE 串流（POST）
+	// Read SSE stream (POST)
 	private async streamSSE(
 		endpoint: string,
 		body: unknown,
@@ -121,6 +152,12 @@ class ApiClient {
 			body: JSON.stringify(body),
 			signal
 		});
+
+		// Handle 401 unauthorized response
+		if (response.status === 401) {
+			this.handleAuthError();
+			throw new Error('Authentication failed. Please login again.');
+		}
 
 		if (!response.ok || !response.body) {
 			const text = await response.text().catch(() => '');
@@ -137,7 +174,7 @@ class ApiClient {
 			buffer += decoder.decode(value, { stream: true });
 
 			let lineEnd;
-			// SSE 以 \n\n 分段，每段包含一或多個以 data: 開頭的行
+			// SSE is segmented by \n\n, each segment contains one or more lines starting with data:
 			while ((lineEnd = buffer.indexOf('\n\n')) !== -1) {
 				const chunk = buffer.slice(0, lineEnd);
 				buffer = buffer.slice(lineEnd + 2);
@@ -152,19 +189,19 @@ class ApiClient {
 						const payload = JSON.parse(jsonStr);
 						onMessage(payload);
 					} catch {
-						// 忽略非 JSON 數據
+						// Ignore non-JSON data
 					}
 				}
 			}
 		}
 	}
 
-	// 健康檢查
+	// Health check
 	async healthCheck() {
 		return this.request('/health');
 	}
 
-	// 認證相關
+	// Authentication related
 	async initiateGoogleLogin(redirectUrl: string = PUBLIC_FRONTEND_URL) {
 		return this.request<OAuthResponse>('/auth/google/login', {
 			method: 'POST',
@@ -182,7 +219,7 @@ class ApiClient {
 		});
 	}
 
-	// 用戶資料相關
+	// User profile related
 	async getUserProfile() {
 		return this.request<UserProfile>('/api/users/profile');
 	}
@@ -230,7 +267,7 @@ class ApiClient {
 		}>(`/api/users?limit=${limit}&offset=${offset}`);
 	}
 
-	// 筆記相關
+	// Notes related
 	async createNote(note: { title: string; content: string; tags?: string[]; is_public?: boolean }) {
 		return this.request<Note>('/api/notes', {
 			method: 'POST',
@@ -238,7 +275,7 @@ class ApiClient {
 		});
 	}
 
-	// 語義搜尋
+	// Semantic search
 	async searchNotes(query: string, threshold = 0.7, limit = 10) {
 		return this.request<{ notes: SearchNotesItem[]; count: number }>(`/api/notes/search`, {
 			method: 'POST',
@@ -246,7 +283,7 @@ class ApiClient {
 		});
 	}
 
-	// 串流：根據查詢生成 Flashcard（使用 /query 路由，服務端以 SSE 回覆 JSON 包裝）
+	// Stream: Generate Flashcard based on query (using /query route, server responds with SSE wrapped JSON)
 	streamFlashcardFromQuery(
 		query: string,
 		onMessage: (payload: unknown) => void,
@@ -259,7 +296,7 @@ class ApiClient {
 		return aborter;
 	}
 
-	// 串流：根據指定筆記生成 Flashcard（使用 /notes 路由，服務端以 SSE 回覆 JSON 包裝）
+	// Stream: Generate Flashcard based on specified notes (using /notes route, server responds with SSE wrapped JSON)
 	streamFlashcardFromNotes(
 		noteIds: string[],
 		onMessage: (payload: unknown) => void,
@@ -319,10 +356,10 @@ class ApiClient {
 	}
 }
 
-// 導出 API 客戶端實例
+// Export API client instance
 export const api = new ApiClient();
 
-// 認證狀態管理
+// Authentication state management
 export class AuthStore {
 	private static instance: AuthStore;
 	private user: User | null = null;
@@ -335,7 +372,7 @@ export class AuthStore {
 		return AuthStore.instance;
 	}
 
-	// 訂閱用戶狀態變化
+	// Subscribe to user state changes
 	subscribe(listener: (user: User | null) => void) {
 		this.listeners.push(listener);
 		return () => {
@@ -343,28 +380,28 @@ export class AuthStore {
 		};
 	}
 
-	// 通知所有監聽者
+	// Notify all listeners
 	private notify() {
 		this.listeners.forEach((listener) => listener(this.user));
 	}
 
-	// 設置用戶
+	// Set user
 	setUser(user: User | null) {
 		this.user = user;
 		this.notify();
 	}
 
-	// 獲取當前用戶
+	// Get current user
 	getUser(): User | null {
 		return this.user;
 	}
 
-	// 檢查是否已登錄
+	// Check if authenticated
 	isAuthenticated(): boolean {
 		return this.user !== null;
 	}
 
-	// 登出
+	// Logout
 	logout() {
 		if (typeof window !== 'undefined') {
 			localStorage.removeItem('access_token');
@@ -373,15 +410,44 @@ export class AuthStore {
 		this.setUser(null);
 	}
 
-	// 初始化（檢查本地存儲的 token）
+	// Check if token is expired (based on JWT payload)
+	private isTokenExpired(token: string): boolean {
+		try {
+			const base64Payload = token.split('.')[1];
+			if (!base64Payload) return true;
+
+			const paddedPayload = base64Payload + '='.repeat((4 - (base64Payload.length % 4)) % 4);
+			const payload = JSON.parse(atob(paddedPayload));
+
+			// Check exp field (expiration time in seconds)
+			if (payload.exp) {
+				const currentTime = Math.floor(Date.now() / 1000);
+				return currentTime >= payload.exp;
+			}
+
+			return false;
+		} catch {
+			return true; // If unable to parse, consider expired
+		}
+	}
+
+	// Initialize (check locally stored token)
 	async initialize() {
 		if (typeof window !== 'undefined') {
 			const token = localStorage.getItem('access_token');
 			if (token) {
+				// First check if token is expired
+				if (this.isTokenExpired(token)) {
+					console.log('Token expired, logging out');
+					this.logout();
+					return;
+				}
+
+				// Verify if token is still valid
 				const response = await api.getCurrentUser();
 				if (response.data) {
 					this.setUser(response.data.user);
-					// 觸發一個事件來通知用戶資料已加載
+					// Trigger an event to notify that user profile has been loaded
 					if (typeof window !== 'undefined') {
 						window.dispatchEvent(
 							new CustomEvent('user-profile-loaded', {
@@ -390,13 +456,32 @@ export class AuthStore {
 						);
 					}
 				} else {
-					// token 無效，清理本地存儲
+					// Token invalid, clear local storage
 					this.logout();
 				}
 			}
 		}
 	}
+
+	// Periodically check token validity
+	startTokenValidationTimer() {
+		if (typeof window !== 'undefined') {
+			// Check token validity every 5 minutes
+			setInterval(
+				async () => {
+					const token = localStorage.getItem('access_token');
+					if (token && this.user) {
+						if (this.isTokenExpired(token)) {
+							console.log('Token expired during validation check');
+							this.logout();
+						}
+					}
+				},
+				5 * 60 * 1000
+			); // 5 minutes
+		}
+	}
 }
 
-// 導出認證狀態管理實例
+// Export authentication state management instance
 export const authStore = AuthStore.getInstance();

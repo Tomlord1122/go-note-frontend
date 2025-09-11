@@ -10,7 +10,7 @@
 	import FlashcardGenerator from '$lib/components/FlashcardGenerator.svelte';
 	import { PUBLIC_FRONTEND_URL } from '$env/static/public';
 	let user = $state<User | null>(null);
-	let userProfile = $state<UserProfile | null>(null);
+	let _userProfile = $state<UserProfile | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
 	let successMessage = $state<string | null>(null);
@@ -58,7 +58,7 @@
 	function handleLogout() {
 		authStore.logout();
 		user = null;
-		userProfile = null;
+		_userProfile = null;
 		currentView = 'notes';
 	}
 
@@ -105,7 +105,12 @@
 			showSuccessToast(`Note ${action} successfully!`);
 		} else {
 			const action = isEditing ? 'update' : 'create';
-			error = `Failed to ${action} note: ${response.error}`;
+			// Check if error is due to authentication failure
+			if (response.error?.includes('Authentication failed')) {
+				error = 'Your session has expired. Please login again.';
+			} else {
+				error = `Failed to ${action} note: ${response.error}`;
+			}
 		}
 
 		loading = false;
@@ -153,7 +158,12 @@
 				selectedNote = null;
 			}
 		} else {
-			error = `Failed to delete note: ${response.error}`;
+			// Check if error is due to authentication failure
+			if (response.error?.includes('Authentication failed')) {
+				error = 'Your session has expired. Please login again.';
+			} else {
+				error = `Failed to delete note: ${response.error}`;
+			}
 		}
 
 		showDeleteConfirm = false;
@@ -175,7 +185,12 @@
 		if (response.data) {
 			userNotes = response.data.notes;
 		} else {
-			console.error('Failed to load notes:', response.error);
+			// Don't show error for authentication failures as they're handled globally
+			if (!response.error?.includes('Authentication failed')) {
+				console.error('Failed to load notes:', response.error);
+				// Optionally show user-friendly error
+				error = 'Failed to load notes. Please try again.';
+			}
 		}
 	}
 
@@ -196,21 +211,41 @@
 		const initialize = async () => {
 			await checkApiStatus();
 			await authStore.initialize();
+			// Start the token validation timer
+			authStore.startTokenValidationTimer();
 		};
 
 		initialize();
 
 		const unsubscribe = authStore.subscribe((currentUser) => {
+			const wasLoggedIn = user !== null;
+			const isNowLoggedIn = currentUser !== null;
+
 			user = currentUser;
+
 			if (currentUser) {
 				loadUserNotes();
 			} else {
 				userNotes = [];
+				// If user was logged in but now is logged out (token expired),
+				// reset the view and show appropriate message
+				if (wasLoggedIn && !isNowLoggedIn) {
+					currentView = 'notes';
+					selectedNote = null;
+					resetForm();
+					error = 'Your session has expired. Please login again.';
+					// Clear the error message after 5 seconds
+					setTimeout(() => {
+						if (error === 'Your session has expired. Please login again.') {
+							error = null;
+						}
+					}, 5000);
+				}
 			}
 		});
 
 		const handleUserProfileLoaded = (event: CustomEvent) => {
-			userProfile = event.detail;
+			_userProfile = event.detail;
 		};
 
 		if (typeof window !== 'undefined') {
