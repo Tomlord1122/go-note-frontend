@@ -1,37 +1,81 @@
 <script lang="ts">
-	import type { User } from '$lib/api.js';
+	import type { User, UserProfile } from '$lib/api.js';
 
 	interface Props {
 		user: User | null;
+		userProfile: UserProfile | null;
 		apiStatus: 'checking' | 'online' | 'offline' | 'error';
 		currentView: 'notes' | 'create' | 'edit';
 		userNotesCount: number;
 		loading: boolean;
+		isMobile: boolean;
+		isMobileMenuOpen: boolean;
 		onViewChange: (view: 'notes' | 'create' | 'edit') => void;
 		onGoogleLogin: () => void;
 		onLogout: () => void;
+		onCloseMobileMenu: () => void;
 	}
 
 	let {
 		user,
+		userProfile,
 		apiStatus,
 		currentView,
 		userNotesCount,
 		loading,
+		isMobile,
+		isMobileMenuOpen,
 		onViewChange,
 		onGoogleLogin,
-		onLogout
+		onLogout,
+		onCloseMobileMenu
 	}: Props = $props();
+
+	function handleViewChangeAndClose(view: 'notes' | 'create' | 'edit') {
+		onViewChange(view);
+		onCloseMobileMenu();
+	}
+
+	function handleLogoutAndClose() {
+		onLogout();
+		onCloseMobileMenu();
+	}
 </script>
 
-<!-- Left navigation panel -->
-<aside class="shadow-m flex h-full w-1/5 flex-col border-r border-gray-400 bg-[#EDEDED]">
+<!-- Mobile/Desktop Responsive Sidebar -->
+<aside
+	class="flex h-full flex-col border-r border-gray-400 bg-white shadow-sm transition-transform duration-300 ease-in-out
+		{isMobile
+		? `fixed inset-y-0 left-0 z-50 w-64 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
+		: 'relative w-80 min-w-[280px] lg:w-1/5'}"
+>
 	<!-- Brand header -->
-	<header class=" border-gray-300 p-6">
-		<div class="flex items-center gap-2">
-			<img src="/app_icon.webp" alt="Go Note" class="h-10 w-10" />
-			<h1 class="font-serif text-xl font-bold text-gray-900">Go Note</h1>
+	<header class="border-b border-gray-300 p-4 md:p-6">
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-2">
+				<img src="/app_icon.webp" alt="Go Note" class="h-8 w-8 md:h-10 md:w-10" />
+				<h1 class="font-serif text-lg font-bold text-gray-900 md:text-xl">Go Note</h1>
+			</div>
+
+			<!-- Mobile Close Button -->
+			{#if isMobile}
+				<button
+					onclick={onCloseMobileMenu}
+					class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:hidden"
+					aria-label="Close menu"
+				>
+					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						></path>
+					</svg>
+				</button>
+			{/if}
 		</div>
+
 		<div class="mt-2 flex items-center">
 			<div
 				class="mr-2 h-2 w-2 rounded-full {apiStatus === 'online'
@@ -52,19 +96,64 @@
 	</header>
 
 	{#if user}
+		<!-- User Info -->
+		<div class="border-b border-gray-300 p-4 md:p-6">
+			<div class="text-center">
+				{#if user.metadata?.picture}
+					<img
+						src={user.metadata.picture as string}
+						alt="User avatar"
+						class="mx-auto mb-3 h-10 w-10 rounded-full border border-gray-200 md:h-12 md:w-12"
+					/>
+				{:else}
+					<div
+						class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 md:h-12 md:w-12"
+					>
+						<svg
+							class="h-5 w-5 text-gray-500 md:h-6 md:w-6"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+							></path>
+						</svg>
+					</div>
+				{/if}
+				<div class="text-sm">
+					{#if user.metadata?.full_name}
+						<p class="font-medium text-gray-900">{user.metadata.full_name}</p>
+					{/if}
+					<p class="truncate text-gray-600">{user.email}</p>
+					{#if userProfile?.username}
+						<p class="mt-1 text-xs text-gray-500">@{userProfile.username}</p>
+					{/if}
+				</div>
+			</div>
+		</div>
+
 		<!-- Navigation menu -->
 		<nav class="flex-1 p-4" aria-label="Main navigation">
 			<ul class="space-y-2">
 				<li>
 					<button
-						onclick={() => onViewChange('notes')}
-						class="flex w-full items-center rounded-md border border-gray-300 px-3 py-2 text-left text-sm font-medium transition-colors duration-200 {currentView ===
+						onclick={() => handleViewChangeAndClose('notes')}
+						class="flex w-full items-center rounded-md px-3 py-3 text-left text-sm font-medium transition-colors duration-200 {currentView ===
 						'notes'
-							? 'text-gray-700 hover:bg-gray-200'
-							: 'bg-gray-100 text-gray-900'}"
+							? 'bg-gray-200 text-gray-900'
+							: 'text-gray-700 hover:bg-gray-100'} md:py-2"
 						aria-pressed={currentView === 'notes'}
 					>
-						<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg
+							class="mr-3 h-5 w-5 md:mr-2 md:h-4 md:w-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
 							<path
 								stroke-linecap="round"
 								stroke-linejoin="round"
@@ -80,14 +169,19 @@
 				</li>
 				<li>
 					<button
-						onclick={() => onViewChange('create')}
-						class="flex w-full items-center rounded-md border border-gray-300 px-3 py-2 text-left text-sm font-medium transition-colors duration-200 {currentView ===
+						onclick={() => handleViewChangeAndClose('create')}
+						class="flex w-full items-center rounded-md px-3 py-3 text-left text-sm font-medium transition-colors duration-200 {currentView ===
 						'create'
-							? 'text-gray-700bg-gray-300'
-							: 'bg-gray-100 text-gray-900'}"
+							? 'bg-gray-200 text-gray-900'
+							: 'text-gray-700 hover:bg-gray-100'} md:py-2"
 						aria-pressed={currentView === 'create'}
 					>
-						<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg
+							class="mr-3 h-5 w-5 md:mr-2 md:h-4 md:w-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
 							<path
 								stroke-linecap="round"
 								stroke-linejoin="round"
@@ -104,10 +198,15 @@
 		<!-- Logout button -->
 		<div class="border-t border-gray-300 p-4">
 			<button
-				onclick={onLogout}
-				class="inline-flex w-full items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+				onclick={handleLogoutAndClose}
+				class="inline-flex w-full items-center justify-center rounded-md bg-gray-200 px-3 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:py-2"
 			>
-				<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<svg
+					class="mr-2 h-5 w-5 md:h-4 md:w-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -120,12 +219,17 @@
 		</div>
 	{:else}
 		<!-- Unauthenticated navigation -->
-		<div class="flex flex-1 flex-col justify-center p-6">
+		<div class="flex flex-1 flex-col justify-center p-4 md:p-6">
 			<div class="text-center">
 				<div
-					class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200"
+					class="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 md:h-12 md:w-12"
 				>
-					<svg class="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg
+						class="h-5 w-5 text-gray-500 md:h-6 md:w-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -138,7 +242,7 @@
 				<button
 					onclick={onGoogleLogin}
 					disabled={loading || apiStatus !== 'online'}
-					class="inline-flex w-full items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none disabled:bg-gray-400"
+					class="inline-flex w-full items-center justify-center rounded-md bg-gray-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none disabled:bg-gray-400 md:py-2"
 				>
 					{#if loading}
 						<svg class="mr-3 -ml-1 h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">

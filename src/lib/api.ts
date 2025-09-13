@@ -370,7 +370,7 @@ class ApiClient {
 	) {
 		const aborter = controller ?? new AbortController();
 		void this.streamSSE(`/api/notes/flashcard/query`, { query }, onMessage, aborter.signal).catch(
-			(err: any) => onMessage({ type: 'error', error: err?.message || 'stream error' })
+			(err: Error) => onMessage({ type: 'error', error: err?.message || 'stream error' })
 		);
 		return aborter;
 	}
@@ -387,7 +387,7 @@ class ApiClient {
 			{ note_ids: noteIds },
 			onMessage,
 			aborter.signal
-		).catch((err: any) => onMessage({ type: 'error', error: err?.message || 'stream error' }));
+		).catch((err: Error) => onMessage({ type: 'error', error: err?.message || 'stream error' }));
 		return aborter;
 	}
 

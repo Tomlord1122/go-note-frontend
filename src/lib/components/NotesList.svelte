@@ -89,7 +89,7 @@
 	/>
 
 	{#if selectedCount > 0}
-		<div class="mb-4 rounded-lg border border-gray-300 bg-blue-50 p-4">
+		<div class="mb-4 rounded-lg border border-gray-300 bg-blue-50 p-3 md:p-4">
 			<div class="flex items-center justify-between">
 				<div class="text-sm text-gray-700">
 					Selected {selectedCount} notes for flashcard generation
@@ -107,17 +107,18 @@
 	{/if}
 
 	{#if filteredAndSortedNotes.length > 0}
-		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+		<!-- Responsive Grid: 1 col on mobile, 2 on tablet, 3 on desktop -->
+		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{#each filteredAndSortedNotes as note (note.id)}
 				<article
-					class="rounded-lg border border-gray-300 bg-white p-6 shadow-sm transition-transform duration-200 hover:scale-105 hover:shadow-md {selectedNotes[
+					class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
 						note.id
 					]
 						? 'bg-blue-50 ring-2 ring-blue-500'
-						: ''}"
+						: ''} md:p-6 md:hover:scale-105"
 				>
 					<header class="mb-3 flex items-start justify-between">
-						<div class="flex flex-1 items-start gap-3">
+						<div class="flex flex-1 items-start gap-2 md:gap-3">
 							<input
 								type="checkbox"
 								checked={!!selectedNotes[note.id]}
@@ -125,8 +126,10 @@
 								class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 								aria-label={`Select note ${note.title}`}
 							/>
-							<div class="flex-1">
-								<h2 class="font-serif text-lg leading-tight font-semibold text-gray-900">
+							<div class="min-w-0 flex-1">
+								<h2
+									class="font-serif text-base leading-tight font-semibold text-gray-900 md:text-lg"
+								>
 									{note.title}
 								</h2>
 							</div>
@@ -149,7 +152,7 @@
 					</div>
 
 					{#if note.tags.length > 0}
-						<div class="mb-4 flex flex-wrap gap-1" role="list" aria-label="標籤">
+						<div class="mb-4 flex flex-wrap gap-1" role="list" aria-label="Tags">
 							{#each note.tags as tag (tag)}
 								<span
 									class="inline-flex items-center rounded-full bg-gray-200 px-2 py-1 text-xs text-gray-700"
@@ -161,7 +164,7 @@
 						</div>
 					{/if}
 
-					<footer class="flex items-center justify-between border-t border-gray-200 pt-4">
+					<footer class="flex items-center justify-between border-t border-gray-200 pt-3 md:pt-4">
 						{#snippet timeDisplay()}
 							{@const timeInfo = getTimeDisplayText(note.created_at, note.updated_at)}
 							<div class="text-xs text-gray-500">
@@ -173,10 +176,10 @@
 						{/snippet}
 
 						{@render timeDisplay()}
-						<div class="flex gap-2">
+						<div class="flex gap-1 md:gap-2">
 							<button
 								onclick={() => onEditNote(note)}
-								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none active:bg-gray-400"
 								aria-label="Edit note"
 								title="Edit"
 							>
@@ -191,7 +194,7 @@
 							</button>
 							<button
 								onclick={() => onDeleteNote(note)}
-								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none active:bg-gray-400"
 								aria-label="Delete note"
 								title="Delete"
 							>
@@ -210,9 +213,10 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="py-12 text-center">
+		<!-- No filtered results -->
+		<div class="py-8 text-center md:py-12">
 			<svg
-				class="mx-auto mb-4 h-12 w-12 text-gray-400"
+				class="mx-auto mb-4 h-10 w-10 text-gray-400 md:h-12 md:w-12"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -224,20 +228,23 @@
 					d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
 				></path>
 			</svg>
-			<h3 class="mb-2 font-serif text-lg font-medium text-gray-900">No notes found</h3>
-			<p class="mb-4 text-gray-600">Try adjusting the filters or clear all filters</p>
+			<h3 class="mb-2 font-serif text-base font-medium text-gray-900 md:text-lg">No notes found</h3>
+			<p class="mb-4 text-sm text-gray-600 md:text-base">
+				Try adjusting the filters or clear all filters
+			</p>
 			<button
 				onclick={clearFilters}
-				class="inline-flex items-center justify-center rounded-md bg-gray-200 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+				class="inline-flex items-center justify-center rounded-md bg-gray-200 px-4 py-2 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:text-sm"
 			>
 				Clear filters
 			</button>
 		</div>
 	{/if}
 {:else}
-	<div class="py-20 text-center">
+	<!-- Empty state -->
+	<div class="py-12 text-center md:py-20">
 		<svg
-			class="mx-auto mb-6 h-16 w-16 text-gray-400"
+			class="mx-auto mb-4 h-12 w-12 text-gray-400 md:mb-6 md:h-16 md:w-16"
 			fill="none"
 			stroke="currentColor"
 			viewBox="0 0 24 24"
@@ -249,11 +256,11 @@
 				d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 			></path>
 		</svg>
-		<h2 class="mb-2 font-serif text-xl font-medium text-gray-900">No notes</h2>
-		<p class="mb-6 text-gray-600">Start creating your first note!</p>
+		<h2 class="mb-2 font-serif text-lg font-medium text-gray-900 md:text-xl">No notes</h2>
+		<p class="mb-4 text-sm text-gray-600 md:mb-6 md:text-base">Start creating your first note!</p>
 		<button
 			onclick={onCreateNote}
-			class="inline-flex items-center justify-center rounded-md bg-gray-600 px-6 py-3 font-medium text-white transition-colors hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+			class="inline-flex items-center justify-center rounded-md bg-gray-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:px-6"
 		>
 			<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"

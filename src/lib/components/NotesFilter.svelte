@@ -41,9 +41,17 @@
 	let hasActiveFilters = $derived(
 		() => selectedTags.length > 0 || sortOrder !== 'newest' || searchQuery.trim() !== ''
 	);
+
+	let isFiltersExpanded = $state(false);
+
+	function toggleFiltersExpanded() {
+		isFiltersExpanded = !isFiltersExpanded;
+	}
 </script>
 
-<div class="mb-6 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
+<!-- Mobile-Responsive Filter Component -->
+<div class="mb-4 rounded-lg border border-gray-300 bg-white p-3 shadow-sm md:mb-6 md:p-4">
+	<!-- Search Bar -->
 	<div class="mb-4">
 		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700"
 			>Search notes</label
@@ -68,12 +76,12 @@
 				value={searchQuery}
 				oninput={(e) => onSearchChange((e.target as HTMLInputElement).value)}
 				placeholder="Search title or content..."
-				class="w-full rounded-md border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500"
+				class="w-full rounded-md border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500 md:py-2"
 			/>
 			{#if searchQuery.trim() !== ''}
 				<button
 					onclick={() => onSearchChange('')}
-					class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+					class="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1 text-gray-400 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
 					aria-label="Clear search"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,86 +97,121 @@
 		</div>
 	</div>
 
-	<div class="flex flex-wrap items-center justify-between gap-4">
-		<div class="flex items-center gap-2">
-			<label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
-			<select
-				id="sort-select"
-				value={sortOrder}
-				onchange={(e) =>
-					onSortChange((e.target as HTMLSelectElement).value as 'newest' | 'oldest' | 'title')}
-				class="rounded-md border-gray-300 px-3 py-1 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500"
-			>
-				<option value="newest">Newest first</option>
-				<option value="oldest">Oldest first</option>
-				<option value="title">Sort by title</option>
-			</select>
-		</div>
+	<!-- Mobile Collapsible Filters -->
+	<div class="space-y-4">
+		<!-- Sort and Clear Filters Row -->
+		<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+			<div class="flex items-center gap-2">
+				<label for="sort-select" class="text-sm font-medium text-gray-700">Sort:</label>
+				<select
+					id="sort-select"
+					value={sortOrder}
+					onchange={(e) =>
+						onSortChange((e.target as HTMLSelectElement).value as 'newest' | 'oldest' | 'title')}
+					class="rounded-md border-gray-300 px-3 py-1 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500"
+				>
+					<option value="newest">Newest first</option>
+					<option value="oldest">Oldest first</option>
+					<option value="title">Sort by title</option>
+				</select>
+			</div>
 
-		{#if hasActiveFilters()}
-			<button
-				onclick={onClearFilters}
-				class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-1 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
-			>
-				<svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M6 18L18 6M6 6l12 12"
-					></path>
-				</svg>
-				Clear filters
-			</button>
-		{/if}
-	</div>
-
-	{#if allTags.length > 0}
-		<div class="mt-4 border-t border-gray-200 pt-4">
-			<label for="tag-select" class="mb-2 block text-sm font-medium text-gray-700"
-				>Filter by tags:</label
-			>
-			<div class="flex flex-wrap gap-2">
-				{#each allTags as tag (tag)}
+			<div class="flex items-center gap-2">
+				<!-- Mobile Filter Toggle -->
+				{#if allTags.length > 0}
 					<button
-						onclick={() => toggleTag(tag)}
-						class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors {selectedTags.includes(
-							tag
-						)
-							? 'bg-gray-700 text-white'
-							: 'bg-gray-200 text-gray-700 hover:bg-gray-300'} focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
-						aria-pressed={selectedTags.includes(tag)}
+						onclick={toggleFiltersExpanded}
+						class="inline-flex items-center justify-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:hidden"
 					>
-						#{tag}
-						{#if selectedTags.includes(tag)}
-							<svg class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M6 18L18 6M6 6l12 12"
-								></path>
-							</svg>
+						<svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"
+							></path>
+						</svg>
+						Filters
+						{#if selectedTags.length > 0}
+							<span class="ml-1 rounded-full bg-gray-600 px-2 py-0.5 text-xs text-white">
+								{selectedTags.length}
+							</span>
 						{/if}
 					</button>
-				{/each}
+				{/if}
+
+				<!-- Clear Filters Button -->
+				{#if hasActiveFilters()}
+					<button
+						onclick={onClearFilters}
+						class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+					>
+						<svg class="mr-1 h-4 w-4 md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M6 18L18 6M6 6l12 12"
+							></path>
+						</svg>
+						<span class="hidden md:inline">Clear filters</span>
+						<span class="md:hidden">Clear</span>
+					</button>
+				{/if}
 			</div>
 		</div>
-	{/if}
 
-	<div class="mt-3 text-xs text-gray-600">
-		{#if selectedTags.length > 0 || searchQuery.trim() !== ''}
-			{#if searchQuery.trim() !== ''}
-				<span>Search: "{searchQuery}"</span>
-				{#if selectedTags.length > 0}
-					<span class="mx-2">•</span>
-				{/if}
-			{/if}
-			{#if selectedTags.length > 0}
-				<span>Selected {selectedTags.length} tags: {selectedTags.join(', ')}</span>
-			{/if}
-		{:else}
-			<span>No tags selected</span>
+		<!-- Tag Filters - Collapsible on Mobile -->
+		{#if allTags.length > 0}
+			<div
+				class="border-t border-gray-200 pt-4 md:border-t-0 md:pt-0 {isFiltersExpanded
+					? 'block'
+					: 'hidden md:block'}"
+			>
+				<div class="mb-2 block text-sm font-medium text-gray-700 md:hidden">Filter by tags:</div>
+				<div class="flex flex-wrap gap-2">
+					{#each allTags as tag (tag)}
+						<button
+							onclick={() => toggleTag(tag)}
+							class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 {selectedTags.includes(
+								tag
+							)
+								? 'bg-gray-700 text-white'
+								: 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'} focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+							aria-pressed={selectedTags.includes(tag)}
+						>
+							#{tag}
+							{#if selectedTags.includes(tag)}
+								<svg class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M6 18L18 6M6 6l12 12"
+									></path>
+								</svg>
+							{/if}
+						</button>
+					{/each}
+				</div>
+			</div>
 		{/if}
+
+		<!-- Filter Status Display -->
+		<div class="mt-3 text-xs text-gray-600">
+			{#if selectedTags.length > 0 || searchQuery.trim() !== ''}
+				{#if searchQuery.trim() !== ''}
+					<span>Search: "{searchQuery}"</span>
+					{#if selectedTags.length > 0}
+						<span class="mx-2">•</span>
+					{/if}
+				{/if}
+				{#if selectedTags.length > 0}
+					<span>Selected {selectedTags.length} tags: {selectedTags.join(', ')}</span>
+				{/if}
+			{:else}
+				<span>No filters applied</span>
+			{/if}
+		</div>
 	</div>
 </div>

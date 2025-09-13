@@ -9,8 +9,8 @@
 	import WelcomePage from '$lib/components/WelcomePage.svelte';
 	import FlashcardGenerator from '$lib/components/FlashcardGenerator.svelte';
 	import { PUBLIC_FRONTEND_URL } from '$env/static/public';
+
 	let user = $state<User | null>(null);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let userProfile = $state<UserProfile | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
@@ -23,8 +23,11 @@
 	let showDeleteConfirm = $state(false);
 
 	let filteredNotesCount = $state(0);
-
 	let selectedNoteIds = $state<string[]>([]);
+
+	// Mobile responsive state
+	let isMobileMenuOpen = $state(false);
+	let isMobile = $state(false);
 
 	let noteForm = $state({
 		title: '',
@@ -208,7 +211,34 @@
 		showDeleteConfirm = true;
 	}
 
+	// Mobile detection and menu handling
+	function checkMobile() {
+		if (typeof window !== 'undefined') {
+			isMobile = window.innerWidth < 768; // md breakpoint
+		}
+	}
+
+	function toggleMobileMenu() {
+		isMobileMenuOpen = !isMobileMenuOpen;
+	}
+
+	function closeMobileMenu() {
+		isMobileMenuOpen = false;
+	}
+
 	onMount(() => {
+		checkMobile();
+
+		// Listen for window resize
+		const handleResize = () => {
+			checkMobile();
+			if (!isMobile) {
+				isMobileMenuOpen = false;
+			}
+		};
+
+		window.addEventListener('resize', handleResize);
+
 		const initialize = async () => {
 			await checkApiStatus();
 			await authStore.initialize();
@@ -257,6 +287,7 @@
 
 		return () => {
 			unsubscribe();
+			window.removeEventListener('resize', handleResize);
 			if (typeof window !== 'undefined') {
 				window.removeEventListener('user-profile-loaded', handleUserProfileLoaded as EventListener);
 			}
@@ -302,47 +333,87 @@
 
 <div class="h-dvh bg-[#EDEDED]">
 	<div class="flex h-full">
-		<Sidebar
-			{user}
-			{apiStatus}
-			{currentView}
-			userNotesCount={userNotes?.length || 0}
-			{loading}
-			onViewChange={handleViewChange}
-			onGoogleLogin={handleGoogleLogin}
-			onLogout={handleLogout}
-		/>
+		<!-- Mobile Menu Overlay -->
+		{#if isMobile && isMobileMenuOpen}
+			<div
+				class="bg-opacity-50 fixed inset-0 z-40 bg-black md:hidden"
+				onclick={closeMobileMenu}
+				onkeydown={(e) => e.key === 'Escape' && closeMobileMenu()}
+				role="button"
+				tabindex="-1"
+				aria-label="Close menu"
+			></div>
+		{/if}
 
-		<main class="flex w-full flex-1 flex-col">
+		<!-- Sidebar -->
+		<div class="relative">
+			<Sidebar
+				{user}
+				{userProfile}
+				{apiStatus}
+				{currentView}
+				userNotesCount={userNotes?.length || 0}
+				{loading}
+				{isMobile}
+				{isMobileMenuOpen}
+				onViewChange={handleViewChange}
+				onGoogleLogin={handleGoogleLogin}
+				onLogout={handleLogout}
+				onCloseMobileMenu={closeMobileMenu}
+			/>
+		</div>
+
+		<main class="flex min-w-0 flex-1 flex-col">
 			{#if user}
-				<header
-					class="border-b border-gray-300 bg-[#EFEFEF] px-8 py-6 shadow-lg backdrop:opacity-50"
-				>
-					<div class="flex items-center justify-between">
-						<div>
+				<!-- Mobile Header with Menu Button -->
+				<header class="border-b border-gray-300 bg-[#EFEFEF] shadow-lg">
+					<div class="flex items-center justify-between px-4 py-4 md:px-8 md:py-6">
+						<!-- Mobile Menu Button -->
+						{#if isMobile}
+							<button
+								onclick={toggleMobileMenu}
+								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:hidden"
+								aria-label="Toggle menu"
+							>
+								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 6h16M4 12h16M4 18h16"
+									></path>
+								</svg>
+							</button>
+						{/if}
+
+						<div class="flex-1 {isMobile ? 'ml-4' : ''}">
 							{#if currentView === 'notes'}
-								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">My Notes</h1>
-								<p class="text-sm text-gray-600">
+								<h1 class="page-title font-serif text-xl font-bold text-gray-900 md:text-2xl">
+									My Notes
+								</h1>
+								<p class="text-xs text-gray-600 md:text-sm">
 									{filteredNotesCount > 0 && filteredNotesCount !== (userNotes?.length || 0)
 										? `Showing ${filteredNotesCount} / ${userNotes?.length || 0} notes`
 										: `${userNotes?.length || 0} notes`}
 								</p>
 							{:else if currentView === 'create'}
-								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">
+								<h1 class="page-title font-serif text-xl font-bold text-gray-900 md:text-2xl">
 									Create New Note
 								</h1>
 							{:else if currentView === 'edit'}
-								<h1 class="page-title font-serif text-2xl font-bold text-gray-900">Edit Note</h1>
+								<h1 class="page-title font-serif text-xl font-bold text-gray-900 md:text-2xl">
+									Edit Note
+								</h1>
 							{/if}
 						</div>
 
 						{#if currentView !== 'notes'}
 							<button
 								onclick={() => handleViewChange('notes')}
-								class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+								class="inline-flex items-center justify-center rounded-md bg-gray-200 px-2 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:px-3"
 								aria-label="Back to notes list"
 							>
-								<svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg class="h-4 w-4 md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
@@ -350,25 +421,26 @@
 										d="M10 19l-7-7m0 0l7-7m-7 7h18"
 									></path>
 								</svg>
-								Back
+								<span class="hidden md:inline">Back</span>
 							</button>
 						{/if}
 					</div>
 				</header>
 
 				<div class="flex-1 overflow-y-auto">
-					<div class="container mx-auto px-4 py-8 lg:max-w-screen-lg">
+					<div class="container mx-auto px-4 py-4 md:py-8 lg:max-w-screen-lg">
 						{#if currentView === 'notes'}
-							<div class="space-y-6">
-								<div class="grid gap-4 md:grid-cols-2">
+							<div class="space-y-4 md:space-y-6">
+								<!-- Flashcard Generators - Stack on mobile, grid on desktop -->
+								<div class="grid gap-4 lg:grid-cols-2">
 									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
-										<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900">
+										<h3 class="mb-3 font-serif text-base font-semibold text-gray-900 md:text-lg">
 											Generate Flashcard by Query
 										</h3>
 										<FlashcardGenerator mode="query" />
 									</div>
 									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
-										<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900">
+										<h3 class="mb-3 font-serif text-base font-semibold text-gray-900 md:text-lg">
 											Generate Flashcard from Notes
 										</h3>
 										{#if selectedNoteIds.length > 0}
@@ -377,7 +449,7 @@
 											</div>
 											<FlashcardGenerator mode="notes" {selectedNoteIds} />
 										{:else}
-											<div class="py-8 text-center text-gray-500">
+											<div class="py-6 text-center text-gray-500 md:py-8">
 												<p class="text-sm">
 													Please select notes from the list below to generate flashcards
 												</p>
