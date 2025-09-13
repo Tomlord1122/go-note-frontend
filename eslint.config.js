@@ -35,6 +35,9 @@ export default ts.config(
 				parser: ts.parser,
 				svelteConfig
 			}
+		},
+		rules: {
+			'svelte/no-at-html-tags': 'off' // Allow @html for markdown rendering
 		}
 	}
 );

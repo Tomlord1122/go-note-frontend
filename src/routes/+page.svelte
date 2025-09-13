@@ -11,6 +11,7 @@
 	import { PUBLIC_FRONTEND_URL } from '$env/static/public';
 
 	let user = $state<User | null>(null);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let userProfile = $state<UserProfile | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
@@ -331,8 +332,8 @@
 	}
 </script>
 
-<div class="h-dvh bg-[#EDEDED]">
-	<div class="flex h-full">
+<div class="h-dvh overflow-hidden bg-[#EDEDED]">
+	<div class="flex h-full overflow-hidden">
 		<!-- Mobile Menu Overlay -->
 		{#if isMobile && isMobileMenuOpen}
 			<div
@@ -350,7 +351,6 @@
 			<div class="relative">
 				<Sidebar
 					{user}
-					{userProfile}
 					{apiStatus}
 					{currentView}
 					userNotesCount={userNotes?.length || 0}
@@ -365,7 +365,7 @@
 			</div>
 		{/if}
 
-		<main class="flex min-w-0 flex-1 flex-col">
+		<main class="flex min-w-0 flex-1 flex-col overflow-hidden">
 			{#if !user && isMobile}
 				<!-- Mobile Header for Unauthenticated Users -->
 				<header class="border-b border-gray-300 bg-[#EFEFEF] shadow-lg">
@@ -448,40 +448,74 @@
 							{/if}
 						</div>
 
-						{#if currentView !== 'notes'}
-							<button
-								onclick={() => handleViewChange('notes')}
-								class="inline-flex items-center justify-center rounded-md bg-gray-200 px-2 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:px-3"
-								aria-label="Back to notes list"
-							>
-								<svg class="h-4 w-4 md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M10 19l-7-7m0 0l7-7m-7 7h18"
-									></path>
-								</svg>
-								<span class="hidden md:inline">Back</span>
-							</button>
-						{/if}
+						<div class="flex items-center gap-2">
+							{#if currentView === 'notes'}
+								<!-- Create Note Button in Navbar -->
+								<button
+									onclick={() => handleViewChange('create')}
+									class="inline-flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+									aria-label="Create new note"
+								>
+									<svg
+										class="h-4 w-4 md:mr-1"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M12 4v16m8-8H4"
+										></path>
+									</svg>
+									<span class="hidden md:inline">New Note</span>
+								</button>
+							{:else}
+								<!-- Back Button -->
+								<button
+									onclick={() => handleViewChange('notes')}
+									class="inline-flex items-center justify-center rounded-md bg-gray-200 px-2 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:px-3"
+									aria-label="Back to notes list"
+								>
+									<svg
+										class="h-4 w-4 md:mr-1"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M10 19l-7-7m0 0l7-7m-7 7h18"
+										></path>
+									</svg>
+									<span class="hidden md:inline">Back</span>
+								</button>
+							{/if}
+						</div>
 					</div>
 				</header>
 
-				<div class="flex-1 overflow-y-auto">
-					<div class="container mx-auto px-4 py-4 md:py-8 lg:max-w-screen-lg">
+				<div class="flex-1 overflow-x-hidden overflow-y-auto">
+					<div class="container mx-auto max-w-full px-4 py-4 md:py-8 lg:max-w-screen-lg">
 						{#if currentView === 'notes'}
 							<div class="space-y-4 md:space-y-6">
 								<!-- Flashcard Generators - Stack on mobile, grid on desktop -->
-								<div class="grid gap-4 lg:grid-cols-2">
-									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
-										<h3 class="mb-3 font-serif text-base font-semibold text-gray-900 md:text-lg">
+								<div class="grid w-full gap-4 lg:grid-cols-2">
+									<div class="min-w-0 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
+										<h3
+											class="mb-3 font-serif text-base font-semibold break-words text-gray-900 md:text-lg"
+										>
 											Generate Flashcard by Query
 										</h3>
 										<FlashcardGenerator mode="query" />
 									</div>
-									<div class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
-										<h3 class="mb-3 font-serif text-base font-semibold text-gray-900 md:text-lg">
+									<div class="min-w-0 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
+										<h3
+											class="mb-3 font-serif text-base font-semibold break-words text-gray-900 md:text-lg"
+										>
 											Generate Flashcard from Notes
 										</h3>
 										{#if selectedNoteIds.length > 0}

@@ -50,7 +50,9 @@
 </script>
 
 <!-- Mobile-Responsive Filter Component -->
-<div class="mb-4 rounded-lg border border-gray-300 bg-white p-3 shadow-sm md:mb-6 md:p-4">
+<div
+	class="mb-4 w-full max-w-full rounded-lg border border-gray-300 bg-white p-3 shadow-sm md:mb-6 md:p-4"
+>
 	<!-- Search Bar -->
 	<div class="mb-4">
 		<label for="search-input" class="mb-2 block text-sm font-medium text-gray-700"
@@ -169,11 +171,11 @@
 					: 'hidden md:block'}"
 			>
 				<div class="mb-2 block text-sm font-medium text-gray-700 md:hidden">Filter by tags:</div>
-				<div class="flex flex-wrap gap-2">
+				<div class="flex flex-wrap gap-2 overflow-hidden">
 					{#each allTags as tag (tag)}
 						<button
 							onclick={() => toggleTag(tag)}
-							class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 {selectedTags.includes(
+							class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium break-all transition-all duration-200 {selectedTags.includes(
 								tag
 							)
 								? 'bg-gray-700 text-white'

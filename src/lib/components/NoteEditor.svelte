@@ -39,13 +39,13 @@
 </script>
 
 <!-- Mobile-Responsive Note Editor -->
-<div class="container mx-auto px-4 lg:max-w-screen-md">
+<div class="container mx-auto max-w-full px-4 lg:max-w-screen-md">
 	<form
 		onsubmit={(e) => {
 			e.preventDefault();
 			onSave();
 		}}
-		class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-6 lg:p-8"
+		class="w-full max-w-full rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-6 lg:p-8"
 	>
 		<div class="space-y-4 md:space-y-6">
 			<!-- Title Input -->

@@ -108,10 +108,10 @@
 
 	{#if filteredAndSortedNotes.length > 0}
 		<!-- Responsive Grid: 1 col on mobile, 2 on tablet, 3 on desktop -->
-		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+		<div class="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{#each filteredAndSortedNotes as note (note.id)}
 				<article
-					class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
+					class="w-full min-w-0 rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
 						note.id
 					]
 						? 'bg-blue-50 ring-2 ring-blue-500'
@@ -128,7 +128,7 @@
 							/>
 							<div class="min-w-0 flex-1">
 								<h2
-									class="font-serif text-base leading-tight font-semibold text-gray-900 md:text-lg"
+									class="font-serif text-base leading-tight font-semibold break-words text-gray-900 md:text-lg"
 								>
 									{note.title}
 								</h2>
@@ -148,14 +148,16 @@
 
 					<div class="prose prose-sm mb-4 font-serif text-gray-800">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						<div class="line-clamp-3">{@html renderMarkdown(note.content)}</div>
+						<div class="line-clamp-3 overflow-hidden break-words">
+							{@html renderMarkdown(note.content)}
+						</div>
 					</div>
 
 					{#if note.tags.length > 0}
-						<div class="mb-4 flex flex-wrap gap-1" role="list" aria-label="Tags">
+						<div class="mb-4 flex flex-wrap gap-1 overflow-hidden" role="list" aria-label="Tags">
 							{#each note.tags as tag (tag)}
 								<span
-									class="inline-flex items-center rounded-full bg-gray-200 px-2 py-1 text-xs text-gray-700"
+									class="inline-flex items-center rounded-full bg-gray-200 px-2 py-1 text-xs break-all text-gray-700"
 									role="listitem"
 								>
 									#{tag}

@@ -50,7 +50,7 @@
 </script>
 
 <!-- Mobile-Responsive Semantic Search -->
-<div class="rounded-lg border border-gray-300 bg-white p-3 shadow-sm md:p-4">
+<div class="w-full max-w-full rounded-lg border border-gray-300 bg-white p-3 shadow-sm md:p-4">
 	<h3 class="mb-3 font-serif text-base font-semibold text-gray-900 md:text-lg">Semantic Search</h3>
 	<form
 		onsubmit={(e) => {
