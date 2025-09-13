@@ -53,10 +53,9 @@
 	<header class="border-b border-gray-300 p-4 md:p-6">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
-				<img src="/app_icon.webp" alt="Go Note" class="h-8 w-8 md:h-10 md:w-10" />
+				<img src="/app_icon.webp" alt="Go Note" class="h-8 w-8 rounded-lg md:h-10 md:w-10" />
 				<h1 class="font-serif text-lg font-bold text-gray-900 md:text-xl">Go Note</h1>
 			</div>
-
 			<!-- Mobile Close Button -->
 			{#if isMobile}
 				<button
