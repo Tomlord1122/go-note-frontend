@@ -108,7 +108,6 @@
 			<!-- Content with Mobile-Optimized Scrolling -->
 			<div class="max-h-[60vh] overflow-y-auto p-4 md:max-h-[70vh] md:p-8">
 				<div class="space-y-6 md:space-y-8">
-
 					<!-- Answer -->
 					<div>
 						<h3 class="mb-3 font-serif text-lg font-semibold text-gray-900 md:mb-4 md:text-xl">

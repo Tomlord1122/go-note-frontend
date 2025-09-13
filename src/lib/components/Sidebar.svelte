@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { User, UserProfile } from '$lib/api.js';
+	import type { User } from '$lib/api.js';
 
 	interface Props {
 		user: User | null;
-		userProfile: UserProfile | null;
 		apiStatus: 'checking' | 'online' | 'offline' | 'error';
 		currentView: 'notes' | 'create' | 'edit';
 		userNotesCount: number;
@@ -18,7 +17,6 @@
 
 	let {
 		user,
-		userProfile,
 		apiStatus,
 		currentView,
 		userNotesCount,

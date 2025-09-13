@@ -345,25 +345,66 @@
 			></div>
 		{/if}
 
-		<!-- Sidebar -->
-		<div class="relative">
-			<Sidebar
-				{user}
-				{userProfile}
-				{apiStatus}
-				{currentView}
-				userNotesCount={userNotes?.length || 0}
-				{loading}
-				{isMobile}
-				{isMobileMenuOpen}
-				onViewChange={handleViewChange}
-				onGoogleLogin={handleGoogleLogin}
-				onLogout={handleLogout}
-				onCloseMobileMenu={closeMobileMenu}
-			/>
-		</div>
+		<!-- Sidebar - Hide on mobile when not authenticated -->
+		{#if user || !isMobile}
+			<div class="relative">
+				<Sidebar
+					{user}
+					{userProfile}
+					{apiStatus}
+					{currentView}
+					userNotesCount={userNotes?.length || 0}
+					{loading}
+					{isMobile}
+					{isMobileMenuOpen}
+					onViewChange={handleViewChange}
+					onGoogleLogin={handleGoogleLogin}
+					onLogout={handleLogout}
+					onCloseMobileMenu={closeMobileMenu}
+				/>
+			</div>
+		{/if}
 
 		<main class="flex min-w-0 flex-1 flex-col">
+			{#if !user && isMobile}
+				<!-- Mobile Header for Unauthenticated Users -->
+				<header class="border-b border-gray-300 bg-[#EFEFEF] shadow-lg">
+					<div class="flex items-center justify-between px-4 py-4">
+						<div class="flex items-center gap-2">
+							<img src="/app_icon.webp" alt="Go Note" class="h-8 w-8" />
+							<h1 class="font-serif text-lg font-bold text-gray-900">Go Note</h1>
+						</div>
+
+						<!-- Mobile Login Button in Header -->
+						<button
+							onclick={handleGoogleLogin}
+							disabled={loading || apiStatus !== 'online'}
+							class="inline-flex items-center justify-center rounded-md bg-gray-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none disabled:bg-gray-400"
+						>
+							{#if loading}
+								<svg class="h-3 w-3 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+									<circle
+										class="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										stroke-width="4"
+									></circle>
+									<path
+										class="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+									></path>
+								</svg>
+							{:else}
+								Login
+							{/if}
+						</button>
+					</div>
+				</header>
+			{/if}
+
 			{#if user}
 				<!-- Mobile Header with Menu Button -->
 				<header class="border-b border-gray-300 bg-[#EFEFEF] shadow-lg">
@@ -488,7 +529,7 @@
 					</div>
 				</div>
 			{:else}
-				<WelcomePage {apiStatus} />
+				<WelcomePage {apiStatus} {loading} onGoogleLogin={handleGoogleLogin} />
 			{/if}
 		</main>
 	</div>
