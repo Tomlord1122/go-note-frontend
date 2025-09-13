@@ -95,46 +95,6 @@
 	</header>
 
 	{#if user}
-		<!-- User Info -->
-		<div class="border-b border-gray-300 p-4 md:p-6">
-			<div class="text-center">
-				{#if user.metadata?.picture}
-					<img
-						src={user.metadata.picture as string}
-						alt="User avatar"
-						class="mx-auto mb-3 h-10 w-10 rounded-full border border-gray-200 md:h-12 md:w-12"
-					/>
-				{:else}
-					<div
-						class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 md:h-12 md:w-12"
-					>
-						<svg
-							class="h-5 w-5 text-gray-500 md:h-6 md:w-6"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-							></path>
-						</svg>
-					</div>
-				{/if}
-				<div class="text-sm">
-					{#if user.metadata?.full_name}
-						<p class="font-medium text-gray-900">{user.metadata.full_name}</p>
-					{/if}
-					<p class="truncate text-gray-600">{user.email}</p>
-					{#if userProfile?.username}
-						<p class="mt-1 text-xs text-gray-500">@{userProfile.username}</p>
-					{/if}
-				</div>
-			</div>
-		</div>
-
 		<!-- Navigation menu -->
 		<nav class="flex-1 p-4" aria-label="Main navigation">
 			<ul class="space-y-2">
