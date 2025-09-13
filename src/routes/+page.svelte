@@ -10,7 +10,8 @@
 	import FlashcardGenerator from '$lib/components/FlashcardGenerator.svelte';
 	import { PUBLIC_FRONTEND_URL } from '$env/static/public';
 	let user = $state<User | null>(null);
-	let _userProfile = $state<UserProfile | null>(null);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let userProfile = $state<UserProfile | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
 	let successMessage = $state<string | null>(null);
@@ -58,7 +59,7 @@
 	function handleLogout() {
 		authStore.logout();
 		user = null;
-		_userProfile = null;
+		userProfile = null;
 		currentView = 'notes';
 	}
 
@@ -245,7 +246,7 @@
 		});
 
 		const handleUserProfileLoaded = (event: CustomEvent) => {
-			_userProfile = event.detail;
+			userProfile = event.detail;
 		};
 
 		if (typeof window !== 'undefined') {

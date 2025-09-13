@@ -96,15 +96,37 @@ class ApiClient {
 		console.log('Token expired or invalid, user logged out');
 	}
 
-	// Generic request method
-	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+	// Generic request method with automatic token refresh
+	private async request<T>(
+		endpoint: string,
+		options: RequestInit = {},
+		retryCount = 0
+	): Promise<ApiResponse<T>> {
 		try {
 			const response = await fetch(`${this.baseUrl}${endpoint}`, {
 				headers: this.getAuthHeaders(),
 				...options
 			});
 
-			// Handle 401 unauthorized response - invalid or expired token
+			// Handle 401 unauthorized response - try to refresh token once
+			if (response.status === 401 && retryCount === 0) {
+				console.log('401 Unauthorized, attempting token refresh...');
+
+				const refreshed = await this.refreshToken();
+				if (refreshed) {
+					// Retry the original request with new token
+					console.log('Retrying request with refreshed token');
+					return this.request<T>(endpoint, options, retryCount + 1);
+				} else {
+					// Refresh failed, handle auth error
+					this.handleAuthError();
+					return {
+						error: 'Authentication failed. Please login again.'
+					};
+				}
+			}
+
+			// If still 401 after refresh attempt, handle auth error
 			if (response.status === 401) {
 				this.handleAuthError();
 				return {
@@ -139,13 +161,14 @@ class ApiClient {
 		}
 	}
 
-	// Read SSE stream (POST)
+	// Read SSE stream (POST) with token refresh support
 	private async streamSSE(
 		endpoint: string,
 		body: unknown,
 		onMessage: (payload: unknown) => void,
-		signal?: AbortSignal
-	) {
+		signal?: AbortSignal,
+		retryCount = 0
+	): Promise<void> {
 		const response = await fetch(`${this.baseUrl}${endpoint}`, {
 			method: 'POST',
 			headers: this.getAuthHeaders(),
@@ -153,7 +176,22 @@ class ApiClient {
 			signal
 		});
 
-		// Handle 401 unauthorized response
+		// Handle 401 unauthorized response - try to refresh token once
+		if (response.status === 401 && retryCount === 0) {
+			console.log('SSE 401 Unauthorized, attempting token refresh...');
+
+			const refreshed = await this.refreshToken();
+			if (refreshed) {
+				// Retry the SSE request with new token
+				console.log('Retrying SSE request with refreshed token');
+				return this.streamSSE(endpoint, body, onMessage, signal, retryCount + 1);
+			} else {
+				this.handleAuthError();
+				throw new Error('Authentication failed. Please login again.');
+			}
+		}
+
+		// If still 401 after refresh attempt, handle auth error
 		if (response.status === 401) {
 			this.handleAuthError();
 			throw new Error('Authentication failed. Please login again.');
@@ -217,6 +255,47 @@ class ApiClient {
 		return this.request('/auth/logout', {
 			method: 'POST'
 		});
+	}
+
+	// Refresh access token using refresh token
+	async refreshToken(): Promise<boolean> {
+		const refreshToken =
+			typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+		if (!refreshToken) {
+			console.log('No refresh token available');
+			return false;
+		}
+
+		try {
+			const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ refresh_token: refreshToken })
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+
+				// Update stored tokens
+				if (typeof window !== 'undefined') {
+					localStorage.setItem('access_token', data.access_token);
+					if (data.refresh_token) {
+						localStorage.setItem('refresh_token', data.refresh_token);
+					}
+				}
+
+				console.log('Token refreshed successfully');
+				return true;
+			} else {
+				console.log('Refresh token failed:', response.status);
+				return false;
+			}
+		} catch (error) {
+			console.error('Refresh token error:', error);
+			return false;
+		}
 	}
 
 	// User profile related
@@ -291,7 +370,7 @@ class ApiClient {
 	) {
 		const aborter = controller ?? new AbortController();
 		void this.streamSSE(`/api/notes/flashcard/query`, { query }, onMessage, aborter.signal).catch(
-			(err) => onMessage({ type: 'error', error: err?.message || 'stream error' })
+			(err: any) => onMessage({ type: 'error', error: err?.message || 'stream error' })
 		);
 		return aborter;
 	}
@@ -308,7 +387,7 @@ class ApiClient {
 			{ note_ids: noteIds },
 			onMessage,
 			aborter.signal
-		).catch((err) => onMessage({ type: 'error', error: err?.message || 'stream error' }));
+		).catch((err: any) => onMessage({ type: 'error', error: err?.message || 'stream error' }));
 		return aborter;
 	}
 
@@ -438,12 +517,20 @@ export class AuthStore {
 			if (token) {
 				// First check if token is expired
 				if (this.isTokenExpired(token)) {
-					console.log('Token expired, logging out');
-					this.logout();
-					return;
+					console.log('Token expired during initialization, attempting refresh...');
+
+					// Try to refresh the token
+					const refreshed = await api.refreshToken();
+					if (!refreshed) {
+						console.log('Refresh failed, logging out');
+						this.logout();
+						return;
+					}
+
+					console.log('Token refreshed successfully during initialization');
 				}
 
-				// Verify if token is still valid
+				// Verify if token is still valid (this will auto-retry with refresh if needed)
 				const response = await api.getCurrentUser();
 				if (response.data) {
 					this.setUser(response.data.user);
@@ -456,14 +543,15 @@ export class AuthStore {
 						);
 					}
 				} else {
-					// Token invalid, clear local storage
+					// Token invalid even after potential refresh, clear local storage
+					console.log('Token validation failed, logging out');
 					this.logout();
 				}
 			}
 		}
 	}
 
-	// Periodically check token validity
+	// Periodically check token validity and refresh if needed
 	startTokenValidationTimer() {
 		if (typeof window !== 'undefined') {
 			// Check token validity every 5 minutes
@@ -472,8 +560,15 @@ export class AuthStore {
 					const token = localStorage.getItem('access_token');
 					if (token && this.user) {
 						if (this.isTokenExpired(token)) {
-							console.log('Token expired during validation check');
-							this.logout();
+							console.log('Token expired during validation check, attempting refresh...');
+
+							const refreshed = await api.refreshToken();
+							if (!refreshed) {
+								console.log('Periodic refresh failed, logging out');
+								this.logout();
+							} else {
+								console.log('Token refreshed successfully during periodic check');
+							}
 						}
 					}
 				},
