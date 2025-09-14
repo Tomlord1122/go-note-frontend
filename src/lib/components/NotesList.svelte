@@ -29,7 +29,7 @@
 	let selectedNotes = $state<Record<string, boolean>>({});
 
 	let filteredAndSortedNotes: Note[] = $derived(
-		notes
+		(notes || [])
 			.filter(
 				(note) =>
 					note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

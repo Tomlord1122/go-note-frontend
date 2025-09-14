@@ -188,7 +188,7 @@
 		const response = await api.getUserNotes(10, 0);
 
 		if (response.data) {
-			userNotes = response.data.notes;
+			userNotes = response.data.notes || [];
 		} else {
 			// Don't show error for authentication failures as they're handled globally
 			if (!response.error?.includes('Authentication failed')) {

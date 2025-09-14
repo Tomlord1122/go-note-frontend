@@ -24,7 +24,7 @@
 	}: Props = $props();
 
 	let allTags: string[] = $derived(
-		notes
+		(notes || [])
 			.flatMap((note) => note.tags)
 			.filter((tag, index, self) => self.indexOf(tag) === index)
 			.sort()
