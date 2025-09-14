@@ -1,5 +1,5 @@
 <script lang="ts">
-	import RealtimeMarkdownEditor from './RealtimeMarkdownEditor.svelte';
+	import NotionLikeEditor from './NotionLikeEditor.svelte';
 
 	interface Props {
 		title: string;
@@ -60,16 +60,19 @@
 				/>
 			</div>
 
-			<!-- Real-time Markdown Editor -->
+			<!-- Notion-like WYSIWYG Editor -->
 			<div>
-				<div class="mb-2 text-sm font-medium text-gray-700">Note Content (Markdown supported)</div>
-				<RealtimeMarkdownEditor
-					{content}
-					{onContentChange}
-					placeholder="Start writing your thoughts... (You can use Markdown syntax)"
-					minHeight="400px"
-					showToolbar={true}
-				/>
+				<div class="mb-2 text-sm font-medium text-gray-700">
+					Note Content (Type '/' for commands)
+				</div>
+				<div class="rounded-lg border border-gray-300 bg-white shadow-sm">
+					<NotionLikeEditor
+						{content}
+						{onContentChange}
+						placeholder="Type '/' for commands or start writing..."
+						minHeight="400px"
+					/>
+				</div>
 			</div>
 
 			<!-- Tags and Settings - Stack on Mobile -->

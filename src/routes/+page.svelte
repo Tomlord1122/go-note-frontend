@@ -150,6 +150,7 @@
 		resetForm();
 		currentView = 'create';
 		selectedNote = null;
+		activeNoteId = null;
 	}
 
 	function startEditNote(note: Note) {
@@ -219,6 +220,11 @@
 		currentView = view;
 		if (view === 'notes') {
 			selectedNote = null;
+			activeNoteId = null;
+			resetForm();
+		} else if (view === 'create') {
+			selectedNote = null;
+			activeNoteId = null;
 			resetForm();
 		}
 	}
