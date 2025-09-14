@@ -162,34 +162,46 @@
 			<!-- Open Notes Tabs -->
 			{#if openNotes.length > 0}
 				<div class="mt-4 border-t border-gray-300 pt-4">
-					<h3 class="mb-3 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-						Open Notes
-					</h3>
+					<div class="mb-3 flex items-center justify-between">
+						<h3 class="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+							Open Notes
+						</h3>
+					</div>
 					<div class="max-h-60 space-y-1 overflow-y-auto">
 						{#each openNotes as note (note.id)}
 							<div
-								class="group flex items-center rounded-md px-2 py-2 text-sm transition-colors duration-200 {activeNoteId ===
+								class="group flex items-center rounded-md px-2 py-2 text-sm transition-colors duration-200 cursor-pointer {activeNoteId ===
 								note.id
 									? 'bg-gray-200 text-gray-900'
 									: 'text-gray-700 hover:bg-gray-100'}"
-							>
-								<button
-									onclick={() => {
+								onclick={() => {
+									onSwitchToNoteTab(note.id);
+									onCloseMobileMenu();
+								}}
+								onkeydown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
 										onSwitchToNoteTab(note.id);
 										onCloseMobileMenu();
-									}}
+									}
+								}}
+								role="button"
+								tabindex="0"
+								aria-label="Open note: {note.title}"
+							>
+								<span
 									class="flex-1 truncate text-left font-medium"
 									title={note.title}
 								>
 									{note.title}
-								</button>
+								</span>
 								<button
 									onclick={(e) => {
 										e.stopPropagation();
 										onCloseNoteTab(note.id);
 									}}
 									class="ml-2 flex-shrink-0 rounded p-1 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-300 hover:text-gray-600 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
-									aria-label="Close note"
+									aria-label="Close note: {note.title}"
 									title="Close note"
 								>
 									<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

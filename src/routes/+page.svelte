@@ -27,6 +27,11 @@
 	let openNotes = $state<Note[]>([]);
 	let activeNoteId = $state<string | null>(null);
 
+	// Real-time saving state
+	let saveStatus = $state<'saved' | 'saving' | 'error'>('saved');
+	let saveTimeout: number;
+	let lastSavedContent = $state('');
+
 	let filteredNotesCount = $state(0);
 	let selectedNoteIds = $state<string[]>([]);
 
@@ -34,11 +39,11 @@
 	let isMobileMenuOpen = $state(false);
 	let isMobile = $state(false);
 
+
 	let noteForm = $state({
 		title: '',
 		content: '',
-		tags: '',
-		is_public: false
+		tags: ''
 	});
 
 	async function checkApiStatus() {
@@ -76,74 +81,10 @@
 		resetForm();
 	}
 
-	async function saveNote() {
-		if (!user) {
-			error = 'Please login first';
-			return;
-		}
-
-		if (!noteForm.title.trim() || !noteForm.content.trim()) {
-			error = 'Title and content cannot be empty';
-			return;
-		}
-
-		loading = true;
-		error = null;
-
-		const noteData = {
-			title: noteForm.title.trim(),
-			content: noteForm.content.trim(),
-			tags: noteForm.tags
-				.split(',')
-				.map((tag) => tag.trim())
-				.filter((tag) => tag.length > 0),
-			is_public: noteForm.is_public
-		};
-
-		let response;
-		const isEditing = currentView === 'edit' && selectedNote;
-
-		if (isEditing && selectedNote) {
-			response = await api.updateNote(selectedNote.id, noteData);
-		} else {
-			response = await api.createNote(noteData);
-		}
-
-		if (response.data) {
-			await loadUserNotes();
-
-			const action = isEditing ? 'updated' : 'created';
-			showSuccessToast(`Note ${action} successfully!`);
-
-			if (isEditing && selectedNote && activeNoteId) {
-				// Update the open tab with fresh data
-				const updatedNote = response.data as Note;
-				openNotes = openNotes.map((n) => (n.id === updatedNote.id ? updatedNote : n));
-				selectedNote = updatedNote;
-			} else {
-				// For new notes, close the create view
-				resetForm();
-				currentView = 'notes';
-				selectedNote = null;
-			}
-		} else {
-			const action = isEditing ? 'update' : 'create';
-			// Check if error is due to authentication failure
-			if (response.error?.includes('Authentication failed')) {
-				error = 'Your session has expired. Please login again.';
-			} else {
-				error = `Failed to ${action} note: ${response.error}`;
-			}
-		}
-
-		loading = false;
-	}
-
 	function resetForm() {
 		noteForm.title = '';
 		noteForm.content = '';
 		noteForm.tags = '';
-		noteForm.is_public = false;
 	}
 
 	function startCreateNote() {
@@ -151,6 +92,7 @@
 		currentView = 'create';
 		selectedNote = null;
 		activeNoteId = null;
+		
 	}
 
 	function startEditNote(note: Note) {
@@ -210,8 +152,11 @@
 			// Don't show error for authentication failures as they're handled globally
 			if (!response.error?.includes('Authentication failed')) {
 				console.error('Failed to load notes:', response.error);
-				// Optionally show user-friendly error
-				error = 'Failed to load notes. Please try again.';
+				// Only show error for actual failures, not for new users with no notes
+				// Check if it's a server error (5xx) rather than empty result
+				if (response.error?.includes('500') || response.error?.includes('Internal Server Error')) {
+					error = 'Failed to load notes. Please try again.';
+				}
 			}
 		}
 	}
@@ -248,7 +193,6 @@
 		noteForm.title = note.title;
 		noteForm.content = note.content;
 		noteForm.tags = note.tags.join(', ');
-		noteForm.is_public = note.is_public;
 		selectedNote = note;
 	}
 
@@ -278,6 +222,98 @@
 		}
 	}
 
+	// Real-time saving functions
+	async function autoSaveNote() {
+		if (!user) return;
+
+		if (!noteForm.title.trim() || !noteForm.content.trim()) {
+			return; // Don't save empty notes
+		}
+
+		const currentContent = JSON.stringify(noteForm);
+		if (currentContent === lastSavedContent) {
+			return; // No changes to save
+		}
+
+		saveStatus = 'saving';
+
+		const noteData = {
+			title: noteForm.title.trim(),
+			content: noteForm.content.trim(),
+			tags: noteForm.tags
+				.split(',')
+				.map((tag) => tag.trim())
+				.filter((tag) => tag.length > 0)
+		};
+
+		let response;
+		const isEditing = currentView === 'edit' && selectedNote;
+
+		try {
+			if (isEditing && selectedNote) {
+				response = await api.updateNote(selectedNote.id, noteData);
+			} else if (currentView === 'create') {
+				response = await api.createNote(noteData);
+
+				if (response.data) {
+					// Switch to edit mode for the newly created note
+					const newNote = response.data as Note;
+					selectedNote = newNote;
+					activeNoteId = newNote.id;
+					currentView = 'edit';
+					openNotes = [...openNotes, newNote];
+				}
+			}
+
+			if (response && response.data) {
+				lastSavedContent = currentContent;
+				saveStatus = 'saved';
+
+				// Update notes list
+				await loadUserNotes();
+
+				// Update open tab with fresh data
+				if (isEditing && selectedNote) {
+					const updatedNote = response.data as Note;
+					openNotes = openNotes.map((n) => (n.id === updatedNote.id ? updatedNote : n));
+					selectedNote = updatedNote;
+				}
+			} else {
+				saveStatus = 'error';
+				console.error('Save failed:', response?.error);
+			}
+		} catch (error) {
+			saveStatus = 'error';
+			console.error('Auto-save error:', error);
+		}
+	}
+
+	function debouncedAutoSave() {
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+		}
+
+		saveTimeout = setTimeout(() => {
+			autoSaveNote();
+		}, 750); // Save after 750ms of no typing
+	}
+
+	// Enhanced form change handlers with auto-save
+	function handleTitleChange(value: string) {
+		noteForm.title = value;
+		debouncedAutoSave();
+	}
+
+	function handleContentChange(value: string) {
+		noteForm.content = value;
+		debouncedAutoSave();
+	}
+
+	function handleTagsChange(value: string) {
+		noteForm.tags = value;
+		debouncedAutoSave();
+	}
+
 	// Mobile detection and menu handling
 	function checkMobile() {
 		if (typeof window !== 'undefined') {
@@ -295,6 +331,7 @@
 
 	onMount(() => {
 		checkMobile();
+		
 
 		// Listen for window resize
 		const handleResize = () => {
@@ -303,6 +340,8 @@
 				isMobileMenuOpen = false;
 			}
 		};
+
+
 
 		window.addEventListener('resize', handleResize);
 
@@ -418,23 +457,23 @@
 		<!-- Sidebar - Hide on mobile when not authenticated -->
 		{#if user || !isMobile}
 			<div class="relative">
-				<Sidebar
-					{user}
-					{apiStatus}
-					{currentView}
-					userNotesCount={userNotes?.length || 0}
-					{loading}
-					{isMobile}
-					{isMobileMenuOpen}
-					{openNotes}
-					{activeNoteId}
-					onViewChange={handleViewChange}
-					onGoogleLogin={handleGoogleLogin}
-					onLogout={handleLogout}
-					onCloseMobileMenu={closeMobileMenu}
-					onSwitchToNoteTab={switchToNoteTab}
-					onCloseNoteTab={closeNoteTab}
-				/>
+					<Sidebar
+						{user}
+						{apiStatus}
+						{currentView}
+						userNotesCount={userNotes?.length || 0}
+						{loading}
+						{isMobile}
+						{isMobileMenuOpen}
+						{openNotes}
+						{activeNoteId}
+						onViewChange={handleViewChange}
+						onGoogleLogin={handleGoogleLogin}
+						onLogout={handleLogout}
+						onCloseMobileMenu={closeMobileMenu}
+						onSwitchToNoteTab={switchToNoteTab}
+						onCloseNoteTab={closeNoteTab}
+					/>
 			</div>
 		{/if}
 
@@ -625,15 +664,12 @@
 								title={noteForm.title}
 								content={noteForm.content}
 								tags={noteForm.tags}
-								isPublic={noteForm.is_public}
-								{loading}
-								isEditing={currentView === 'edit'}
-								onSave={saveNote}
+								{saveStatus}
+								autoFocus={currentView === 'create'}
 								onCancel={() => handleViewChange('notes')}
-								onTitleChange={(value) => (noteForm.title = value)}
-								onContentChange={(value) => (noteForm.content = value)}
-								onTagsChange={(value) => (noteForm.tags = value)}
-								onPublicChange={(value) => (noteForm.is_public = value)}
+								onTitleChange={handleTitleChange}
+								onContentChange={handleContentChange}
+								onTagsChange={handleTagsChange}
 							/>
 						</div>
 					{/if}

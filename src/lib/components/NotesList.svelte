@@ -152,16 +152,6 @@
 								</h2>
 							</div>
 						</div>
-						<div class="ml-2 flex items-center gap-1">
-							{#if note.is_public}
-								<span
-									class="inline-flex items-center rounded-full bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700"
-									aria-label="Public note"
-								>
-									Public
-								</span>
-							{/if}
-						</div>
 					</header>
 
 					<div class="markdown-content mb-4 font-serif text-gray-800">

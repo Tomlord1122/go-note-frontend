@@ -32,7 +32,6 @@ export interface Note {
 	title: string;
 	content: string;
 	tags: string[];
-	is_public: boolean;
 	created_at: string;
 	updated_at: string;
 }
@@ -347,7 +346,7 @@ class ApiClient {
 	}
 
 	// Notes related
-	async createNote(note: { title: string; content: string; tags?: string[]; is_public?: boolean }) {
+	async createNote(note: { title: string; content: string; tags?: string[] }) {
 		return this.request<Note>('/api/notes', {
 			method: 'POST',
 			body: JSON.stringify(note)
@@ -410,7 +409,6 @@ class ApiClient {
 			title?: string;
 			content?: string;
 			tags?: string[];
-			is_public?: boolean;
 		}
 	) {
 		return this.request<Note>(`/api/notes/${id}`, {
@@ -425,14 +423,6 @@ class ApiClient {
 		});
 	}
 
-	async getPublicNotes(limit: number = 10, offset: number = 0) {
-		return this.request<{
-			notes: Note[];
-			limit: number;
-			offset: number;
-			count: number;
-		}>(`/api/notes/public?limit=${limit}&offset=${offset}`);
-	}
 }
 
 // Export API client instance

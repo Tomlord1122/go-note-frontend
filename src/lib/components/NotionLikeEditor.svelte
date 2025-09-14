@@ -69,7 +69,7 @@
 		},
 		{
 			label: 'Code Block',
-			action: () => insertText('```\n', '\n```'),
+			action: () => insertText('```go\n', '\n```'),
 			icon: '<>',
 			keywords: ['code', 'block']
 		},
@@ -157,28 +157,29 @@
 			}
 		}
 
-		// Handle slash command trigger
-		if (event.key === '/') {
-			setTimeout(() => {
-				if (editorRef) {
-					// Simple positioning relative to the textarea
-					showSlashMenu = true;
-					slashMenuPosition = {
-						x: 50, // Fixed position relative to editor
-						y: 50
-					};
-					updateSlashMenu('');
-					selectedSlashIndex = 0;
-					// Auto-focus search input
-					setTimeout(() => {
-						const searchInput = document.querySelector('.slash-menu input');
-						if (searchInput instanceof HTMLInputElement) {
-							searchInput.focus();
-						}
-					}, 50);
-				}
-			}, 0);
-		}
+	// Handle slash command trigger
+	if (event.key === '/') {
+		setTimeout(() => {
+			if (editorRef) {
+				// Calculate cursor position in textarea
+				const cursorPosition = getCursorPosition();
+				showSlashMenu = true;
+				slashMenuPosition = {
+					x: cursorPosition.x,
+					y: cursorPosition.y + 20 // Add some offset below the cursor
+				};
+				updateSlashMenu('');
+				selectedSlashIndex = 0;
+				// Auto-focus search input
+				setTimeout(() => {
+					const searchInput = document.querySelector('.slash-menu input');
+					if (searchInput instanceof HTMLInputElement) {
+						searchInput.focus();
+					}
+				}, 50);
+			}
+		}, 0);
+	}
 
 		// Handle other shortcuts
 		if (event.ctrlKey || event.metaKey) {
@@ -204,6 +205,13 @@
 		slashMenuItems = [];
 		selectedSlashIndex = 0;
 		slashSearchQuery = '';
+		
+		// Return focus to the editor textarea
+		setTimeout(() => {
+			if (editorRef) {
+				editorRef.focus();
+			}
+		}, 0);
 	}
 
 	function removeIndentation() {
@@ -243,6 +251,77 @@
 				}
 			}, 0);
 		}
+	}
+
+	function getCursorPosition() {
+		if (!editorRef) return { x: 0, y: 0 };
+
+		// Create a temporary element to measure text dimensions
+		const mirror = document.createElement('div');
+		const computed = window.getComputedStyle(editorRef);
+		
+		// Copy textarea styles to mirror element
+		mirror.style.position = 'absolute';
+		mirror.style.visibility = 'hidden';
+		mirror.style.whiteSpace = 'pre-wrap';
+		mirror.style.wordWrap = 'break-word';
+		mirror.style.top = '0';
+		mirror.style.left = '0';
+		mirror.style.width = computed.width;
+		mirror.style.font = computed.font;
+		mirror.style.fontSize = computed.fontSize;
+		mirror.style.fontFamily = computed.fontFamily;
+		mirror.style.fontWeight = computed.fontWeight;
+		mirror.style.lineHeight = computed.lineHeight;
+		mirror.style.letterSpacing = computed.letterSpacing;
+		mirror.style.padding = computed.padding;
+		mirror.style.border = computed.border;
+		mirror.style.boxSizing = computed.boxSizing;
+
+		document.body.appendChild(mirror);
+
+		// Get text up to cursor position
+		const textBeforeCursor = content.substring(0, editorRef.selectionStart);
+		mirror.textContent = textBeforeCursor;
+
+		// Create a span for the cursor position
+		const cursorSpan = document.createElement('span');
+		cursorSpan.textContent = '|';
+		mirror.appendChild(cursorSpan);
+
+		// Get textarea position relative to viewport
+		const textareaRect = editorRef.getBoundingClientRect();
+		const cursorSpanRect = cursorSpan.getBoundingClientRect();
+
+		// Calculate position relative to textarea
+		let x = cursorSpanRect.left - textareaRect.left + editorRef.scrollLeft;
+		let y = cursorSpanRect.top - textareaRect.top + editorRef.scrollTop;
+
+		// Cleanup
+		document.body.removeChild(mirror);
+
+		// Boundary checking to keep menu within viewport
+		const menuWidth = 288; // w-72 = 288px
+		const menuHeight = 300; // Approximate menu height
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+		const textareaViewportRect = editorRef.getBoundingClientRect();
+
+		// Adjust X position if menu would go off right edge
+		if (textareaViewportRect.left + x + menuWidth > viewportWidth) {
+			x = Math.max(0, viewportWidth - textareaViewportRect.left - menuWidth - 10);
+		}
+
+		// Adjust Y position if menu would go off bottom edge
+		if (textareaViewportRect.top + y + menuHeight > viewportHeight) {
+			y = Math.max(0, y - menuHeight - 40); // Position above cursor instead
+		}
+
+		// Ensure minimum positioning
+		x = Math.max(0, x);
+		y = Math.max(0, y);
+
+		return { x, y };
 	}
 
 	function updateSlashMenu(query: string) {

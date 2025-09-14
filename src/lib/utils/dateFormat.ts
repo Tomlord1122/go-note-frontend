@@ -1,6 +1,6 @@
 export function formatDate(dateString: string): string {
 	const date = new Date(dateString);
-	return date.toLocaleDateString('zh-TW', {
+	return date.toLocaleDateString('en-US', {
 		year: 'numeric',
 		month: 'short',
 		day: 'numeric'
@@ -9,7 +9,7 @@ export function formatDate(dateString: string): string {
 
 export function formatDateTime(dateString: string): string {
 	const date = new Date(dateString);
-	return date.toLocaleDateString('zh-TW', {
+	return date.toLocaleDateString('en-US', {
 		year: 'numeric',
 		month: 'short',
 		day: 'numeric',
