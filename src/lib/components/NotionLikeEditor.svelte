@@ -21,7 +21,7 @@
 	let slashMenuPosition = $state({ x: 0, y: 0 });
 	let slashMenuItems = $state<Array<{ label: string; action: () => void; icon: string }>>([]);
 	let selectedSlashIndex = $state(0);
-	let cursorPosition = $state(0);
+	let slashSearchQuery = $state('');
 
 	// Slash command definitions
 	const slashCommands = [
@@ -106,15 +106,21 @@
 		const end = editorRef.selectionEnd;
 		const selectedText = content.substring(start, end);
 
+		// If we're inserting from slash menu, remove the slash
+		let actualStart = start;
+		if (showSlashMenu && start > 0 && content[start - 1] === '/') {
+			actualStart = start - 1;
+		}
+
 		const newContent =
-			content.substring(0, start) + before + selectedText + after + content.substring(end);
+			content.substring(0, actualStart) + before + selectedText + after + content.substring(end);
 
 		onContentChange(newContent);
 
 		// Position cursor
 		setTimeout(() => {
 			if (editorRef) {
-				const newCursorPos = start + before.length + selectedText.length;
+				const newCursorPos = actualStart + before.length + selectedText.length;
 				editorRef.setSelectionRange(newCursorPos, newCursorPos);
 				editorRef.focus();
 			}
@@ -126,47 +132,50 @@
 	function handleInput(event: Event) {
 		const target = event.target as HTMLTextAreaElement;
 		onContentChange(target.value);
-		cursorPosition = target.selectionStart;
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
-		const target = event.target as HTMLTextAreaElement;
-		cursorPosition = target.selectionStart;
-
-		if (showSlashMenu) {
-			switch (event.key) {
-				case 'ArrowDown':
-					event.preventDefault();
-					selectedSlashIndex = Math.min(selectedSlashIndex + 1, slashMenuItems.length - 1);
-					break;
-				case 'ArrowUp':
-					event.preventDefault();
-					selectedSlashIndex = Math.max(selectedSlashIndex - 1, 0);
-					break;
-				case 'Enter':
-					event.preventDefault();
-					slashMenuItems[selectedSlashIndex]?.action();
-					break;
-				case 'Escape':
-					event.preventDefault();
-					hideSlashMenu();
-					break;
+		// Handle tab indentation and unindentation
+		if (event.key === 'Tab') {
+			event.preventDefault();
+			if (event.shiftKey) {
+				// Shift+Tab: Remove indentation
+				removeIndentation();
+			} else {
+				// Tab: Add indentation
+				insertText('\t');
 			}
 			return;
+		}
+
+		if (showSlashMenu && event.target === editorRef) {
+			// Only handle Escape from editor when slash menu is open
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				hideSlashMenu();
+				return;
+			}
 		}
 
 		// Handle slash command trigger
 		if (event.key === '/') {
 			setTimeout(() => {
 				if (editorRef) {
-					const rect = getCaretPosition(editorRef, cursorPosition + 1);
+					// Simple positioning relative to the textarea
 					showSlashMenu = true;
 					slashMenuPosition = {
-						x: rect.left,
-						y: rect.top + 20
+						x: 50, // Fixed position relative to editor
+						y: 50
 					};
-					slashMenuItems = slashCommands;
+					updateSlashMenu('');
 					selectedSlashIndex = 0;
+					// Auto-focus search input
+					setTimeout(() => {
+						const searchInput = document.querySelector('.slash-menu input');
+						if (searchInput instanceof HTMLInputElement) {
+							searchInput.focus();
+						}
+					}, 50);
 				}
 			}, 0);
 		}
@@ -190,41 +199,63 @@
 		}
 	}
 
-	function getCaretPosition(textarea: HTMLTextAreaElement, position: number) {
-		const div = document.createElement('div');
-		const span = document.createElement('span');
-
-		// Copy the textarea's style to the div
-		const style = window.getComputedStyle(textarea);
-		div.style.position = 'absolute';
-		div.style.visibility = 'hidden';
-		div.style.whiteSpace = 'pre-wrap';
-		div.style.wordWrap = 'break-word';
-		div.style.font = style.font;
-		div.style.padding = style.padding;
-		div.style.border = style.border;
-		div.style.width = style.width;
-
-		// Add the text content
-		const textContent = textarea.value.substring(0, position);
-		div.textContent = textContent;
-		span.textContent = '|';
-		div.appendChild(span);
-
-		document.body.appendChild(div);
-		const rect = span.getBoundingClientRect();
-		const textareaRect = textarea.getBoundingClientRect();
-		document.body.removeChild(div);
-
-		return {
-			left: rect.left - textareaRect.left,
-			top: rect.top - textareaRect.top
-		};
-	}
-
 	function hideSlashMenu() {
 		showSlashMenu = false;
 		slashMenuItems = [];
+		selectedSlashIndex = 0;
+		slashSearchQuery = '';
+	}
+
+	function removeIndentation() {
+		if (!editorRef) return;
+
+		const start = editorRef.selectionStart;
+		const end = editorRef.selectionEnd;
+
+		// Find the start of the current line
+		const beforeCursor = content.substring(0, start);
+		const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+		const currentLine = content.substring(lineStart, start);
+
+		// Check if line starts with tab or spaces
+		if (currentLine.startsWith('\t')) {
+			// Remove one tab
+			const newContent = content.substring(0, lineStart) + content.substring(lineStart + 1);
+			onContentChange(newContent);
+
+			// Adjust cursor position
+			setTimeout(() => {
+				if (editorRef) {
+					editorRef.setSelectionRange(start - 1, end - 1);
+					editorRef.focus();
+				}
+			}, 0);
+		} else if (currentLine.startsWith('    ')) {
+			// Remove 4 spaces
+			const newContent = content.substring(0, lineStart) + content.substring(lineStart + 4);
+			onContentChange(newContent);
+
+			// Adjust cursor position
+			setTimeout(() => {
+				if (editorRef) {
+					editorRef.setSelectionRange(start - 4, end - 4);
+					editorRef.focus();
+				}
+			}, 0);
+		}
+	}
+
+	function updateSlashMenu(query: string) {
+		slashSearchQuery = query;
+		if (query.trim() === '') {
+			slashMenuItems = slashCommands;
+		} else {
+			slashMenuItems = slashCommands.filter(
+				(cmd) =>
+					cmd.label.toLowerCase().includes(query.toLowerCase()) ||
+					cmd.keywords.some((keyword) => keyword.toLowerCase().includes(query.toLowerCase()))
+			);
+		}
 		selectedSlashIndex = 0;
 	}
 
@@ -277,30 +308,68 @@
 		</div>
 	</div>
 
-	<!-- Slash Command Menu -->
+	<!-- Enhanced Slash Command Menu -->
 	{#if showSlashMenu}
 		<div
-			class="slash-menu absolute z-50 w-64 rounded-lg border border-gray-200 bg-white shadow-lg"
+			class="slash-menu absolute z-50 w-72 rounded-lg border border-gray-200 bg-white shadow-lg"
 			style="left: {slashMenuPosition.x}px; top: {slashMenuPosition.y}px;"
 		>
+			<!-- Search Input -->
+			<div class="border-b border-gray-200 p-3">
+				<input
+					type="text"
+					value={slashSearchQuery}
+					oninput={(e) => updateSlashMenu((e.target as HTMLInputElement).value)}
+					onkeydown={(e) => {
+						switch (e.key) {
+							case 'ArrowDown':
+								e.preventDefault();
+								selectedSlashIndex = Math.min(selectedSlashIndex + 1, slashMenuItems.length - 1);
+								break;
+							case 'ArrowUp':
+								e.preventDefault();
+								selectedSlashIndex = Math.max(selectedSlashIndex - 1, 0);
+								break;
+							case 'Enter':
+								if (slashMenuItems.length > 0) {
+									e.preventDefault();
+									slashMenuItems[selectedSlashIndex]?.action();
+								}
+								break;
+							case 'Escape':
+								e.preventDefault();
+								hideSlashMenu();
+								break;
+						}
+					}}
+					placeholder="Search commands..."
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:ring-1 focus:ring-gray-500 focus:outline-none"
+				/>
+			</div>
+
+			<!-- Command List -->
 			<div class="max-h-64 overflow-y-auto p-2">
-				{#each slashMenuItems as item, index (item.label)}
-					<button
-						type="button"
-						onclick={item.action}
-						class="flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors {index ===
-						selectedSlashIndex
-							? 'bg-gray-100 text-gray-900'
-							: 'text-gray-700 hover:bg-gray-50'}"
-					>
-						<span
-							class="mr-3 flex h-6 w-6 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600"
+				{#if slashMenuItems.length > 0}
+					{#each slashMenuItems as item, index (item.label)}
+						<button
+							type="button"
+							onclick={item.action}
+							class="flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors {index ===
+							selectedSlashIndex
+								? 'bg-gray-100 text-gray-900'
+								: 'text-gray-700 hover:bg-gray-50'}"
 						>
-							{item.icon}
-						</span>
-						{item.label}
-					</button>
-				{/each}
+							<span
+								class="mr-3 flex h-6 w-6 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600"
+							>
+								{item.icon}
+							</span>
+							{item.label}
+						</button>
+					{/each}
+				{:else}
+					<div class="px-3 py-2 text-sm text-gray-500">No commands found</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

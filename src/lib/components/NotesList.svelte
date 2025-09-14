@@ -110,19 +110,37 @@
 		<!-- Responsive Grid: 1 col on mobile, 2 on tablet, 3 on desktop -->
 		<div class="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{#each filteredAndSortedNotes as note (note.id)}
-				<article
-					class="w-full min-w-0 rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
+				<div
+					class="w-full min-w-0 cursor-pointer rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
 						note.id
 					]
 						? 'bg-blue-50 ring-2 ring-blue-500'
 						: ''} md:p-6 md:hover:scale-105"
+					onclick={(e) => {
+						// Don't trigger if clicking on checkbox or buttons
+						if (e.target instanceof Element && e.target.closest('input, button')) return;
+						onEditNote(note);
+					}}
+					role="button"
+					tabindex="0"
+					onkeydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							onEditNote(note);
+						}
+					}}
+					aria-label={`Open note: ${note.title}`}
 				>
 					<header class="mb-3 flex items-start justify-between">
 						<div class="flex flex-1 items-start gap-2 md:gap-3">
 							<input
 								type="checkbox"
 								checked={!!selectedNotes[note.id]}
-								onchange={() => toggleNoteSelection(note.id)}
+								onchange={(e) => {
+									e.stopPropagation();
+									toggleNoteSelection(note.id);
+								}}
+								onclick={(e) => e.stopPropagation()}
 								class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 								aria-label={`Select note ${note.title}`}
 							/>
@@ -180,22 +198,10 @@
 						{@render timeDisplay()}
 						<div class="flex gap-1 md:gap-2">
 							<button
-								onclick={() => onEditNote(note)}
-								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none active:bg-gray-400"
-								aria-label="Edit note"
-								title="Edit"
-							>
-								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-									></path>
-								</svg>
-							</button>
-							<button
-								onclick={() => onDeleteNote(note)}
+								onclick={(e) => {
+									e.stopPropagation();
+									onDeleteNote(note);
+								}}
 								class="inline-flex items-center justify-center rounded-md bg-gray-200 p-2 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none active:bg-gray-400"
 								aria-label="Delete note"
 								title="Delete"
@@ -211,7 +217,7 @@
 							</button>
 						</div>
 					</footer>
-				</article>
+				</div>
 			{/each}
 		</div>
 	{:else}
