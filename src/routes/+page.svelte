@@ -560,7 +560,7 @@
 
 			{#if user}
 				<!-- Mobile Header with Menu Button -->
-				<header class="border-b border-gray-300 bg-[#EFEFEF] shadow-lg">
+				<header class="border-b border-gray-300 bg-[#EFEFEF] shadow-lg rounded-md">
 					<div class="flex items-center justify-between px-4 py-4 md:px-8 md:py-6">
 						<!-- Mobile Menu Button -->
 						{#if isMobile}

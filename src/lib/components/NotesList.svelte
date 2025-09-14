@@ -111,7 +111,7 @@
 		<div class="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{#each filteredAndSortedNotes as note (note.id)}
 				<div
-					class="w-full min-w-0 cursor-pointer rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
+					class="flex h-80 w-full min-w-0 cursor-pointer flex-col rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] {selectedNotes[
 						note.id
 					]
 						? 'bg-blue-50 ring-2 ring-blue-500'
@@ -131,6 +131,7 @@
 					}}
 					aria-label={`Open note: ${note.title}`}
 				>
+					<!-- Header: Checkbox + Title (固定高度) -->
 					<header class="mb-3 flex items-start justify-between">
 						<div class="flex flex-1 items-start gap-2 md:gap-3">
 							<input
@@ -146,7 +147,8 @@
 							/>
 							<div class="min-w-0 flex-1">
 								<h2
-									class="font-serif text-base leading-tight font-semibold break-words text-gray-900 md:text-lg"
+									class="line-clamp-2 font-serif text-base font-semibold leading-tight text-gray-900 md:text-lg"
+									title={note.title}
 								>
 									{note.title}
 								</h2>
@@ -154,33 +156,45 @@
 						</div>
 					</header>
 
-					<div class="markdown-content mb-4 font-serif text-gray-800">
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						<div class="line-clamp-3 overflow-hidden break-words">
-							{@html renderMarkdown(note.content)}
+					<!-- Content: 彈性成長區域 -->
+					<div class="mb-3 flex-1 overflow-hidden">
+						<div class="markdown-content font-serif text-sm text-gray-800">
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							<div class="line-clamp-4 overflow-hidden break-words">
+								{@html renderMarkdown(note.content)}
+							</div>
 						</div>
 					</div>
 
-					{#if note.tags.length > 0}
-						<div class="mb-4 flex flex-wrap gap-1 overflow-hidden" role="list" aria-label="Tags">
-							{#each note.tags as tag (tag)}
+					<!-- Tags: 固定位置，最多顯示 3 個標籤 -->
+					<div class="mb-3 flex h-6 items-center overflow-hidden" role="list" aria-label="Tags">
+						{#if note.tags.length > 0}
+							{#each note.tags.slice(0, 3) as tag (tag)}
 								<span
-									class="inline-flex items-center rounded-full bg-gray-200 px-2 py-1 text-xs break-all text-gray-700"
+									class="mr-1 inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700"
 									role="listitem"
 								>
 									#{tag}
 								</span>
 							{/each}
-						</div>
-					{/if}
+							{#if note.tags.length > 3}
+								<span class="text-xs text-gray-500">+{note.tags.length - 3}</span>
+							{/if}
+						{:else}
+							<div class="h-6"></div>
+						{/if}
+					</div>
 
-					<footer class="flex items-center justify-between border-t border-gray-200 pt-3 md:pt-4">
+					<!-- Footer: 固定高度 -->
+					<footer class="mt-auto flex items-center justify-between border-t border-gray-200 pt-3">
 						{#snippet timeDisplay()}
 							{@const timeInfo = getTimeDisplayText(note.created_at, note.updated_at)}
 							<div class="text-xs text-gray-500">
-								<time datetime={note.updated_at}>{timeInfo.primary}</time>
+								<time datetime={note.updated_at} title={`Created: ${note.created_at}`}>
+									{timeInfo.primary}
+								</time>
 								{#if timeInfo.secondary}
-									<div class="mt-1 text-xs text-gray-400">{timeInfo.secondary}</div>
+									<div class="mt-0.5 text-xs text-gray-400">{timeInfo.secondary}</div>
 								{/if}
 							</div>
 						{/snippet}
