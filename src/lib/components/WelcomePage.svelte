@@ -74,32 +74,6 @@
 					Login with Google
 				{/if}
 			</button>
-
-			{#if apiStatus !== 'online'}
-				<div class="rounded-md border border-gray-400 bg-gray-100 p-3 md:p-4">
-					<div class="flex items-start">
-						<svg
-							class="h-5 w-5 flex-shrink-0 text-gray-600"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							></path>
-						</svg>
-						<div class="ml-3 text-left">
-							<h3 class="text-sm font-medium text-gray-800">API Service Not Running</h3>
-							<p class="mt-1 text-sm text-gray-700">
-								Please ensure the Go API server is running at http://localhost:8080
-							</p>
-						</div>
-					</div>
-				</div>
-			{/if}
 		</div>
 	</div>
 </div>
