@@ -496,7 +496,7 @@
 
 		<!-- Sidebar - Hide on mobile when not authenticated -->
 		{#if user || !isMobile}
-			<div class="relative">
+			<div class="relative flex-shrink-0">
 					<Sidebar
 						{user}
 						{apiStatus}

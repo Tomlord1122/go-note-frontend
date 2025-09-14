@@ -53,10 +53,10 @@
 
 <!-- Mobile/Desktop Responsive Sidebar -->
 <aside
-	class="flex h-full flex-col border-r border-gray-400 bg-[#dfdfdff0] shadow-sm transition-transform duration-300 ease-in-out
+	class="flex h-full flex-col border-r border-gray-400 bg-[#dfdfdff0] shadow-sm transition-transform duration-300 ease-in-out overflow-hidden
 		{isMobile
 		? `fixed inset-y-0 left-0 z-50 w-64 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
-		: 'relative w-80 min-w-[280px] lg:w-1/5'}"
+		: 'relative w-80 min-w-[280px] max-w-[320px] lg:w-1/5'}"
 >
 	<!-- Brand header -->
 	<header class="border-b border-gray-300 p-4 md:p-6">
@@ -178,7 +178,7 @@
 					<div class="scrollbar-stable max-h-60 space-y-1 overflow-y-auto">
 						{#each openNotes as note (note.id)}
 							<div
-								class="group flex items-center rounded-md px-2 py-2 text-sm transition-colors duration-200 cursor-pointer {activeNoteId ===
+								class="group flex items-center rounded-md px-2 py-2 text-sm transition-colors duration-200 cursor-pointer min-w-0 {activeNoteId ===
 								note.id
 									? 'bg-gray-200 text-gray-900'
 									: 'text-gray-700 hover:bg-gray-100'}"
@@ -198,10 +198,10 @@
 								aria-label="Open note: {note.title}"
 							>
 								<span
-									class="flex-1 truncate text-left font-medium"
+									class="flex-1 truncate text-left font-medium min-w-0 overflow-hidden"
 									title={note.title}
 								>
-									{note.title}
+									{note.title.length > 25 ? note.title.slice(0, 25) + '...' : note.title}
 								</span>
 								<button
 									onclick={(e) => {
