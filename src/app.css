@@ -1,1 +1,107 @@
 @import 'tailwindcss';
+
+/* Prism.js syntax highlighting styles */
+@import 'prismjs/themes/prism.css';
+
+/* Custom markdown styles */
+.markdown-content {
+	/* Headings */
+	h1 {
+		@apply mt-6 mb-4 text-3xl font-bold text-gray-900;
+	}
+
+	h2 {
+		@apply mt-5 mb-3 text-2xl font-semibold text-gray-900;
+	}
+
+	h3 {
+		@apply mt-4 mb-3 text-xl font-semibold text-gray-900;
+	}
+
+	h4 {
+		@apply mt-4 mb-2 text-lg font-semibold text-gray-900;
+	}
+
+	h5 {
+		@apply mt-3 mb-2 text-base font-semibold text-gray-900;
+	}
+
+	h6 {
+		@apply mt-3 mb-2 text-sm font-semibold text-gray-900;
+	}
+
+	/* Paragraphs */
+	p {
+		@apply mb-4 leading-relaxed text-gray-700;
+	}
+
+	/* Lists */
+	ul {
+		@apply mb-4 ml-6 list-disc;
+	}
+
+	ol {
+		@apply mb-4 ml-6 list-decimal;
+	}
+
+	li {
+		@apply mb-1 text-gray-700;
+	}
+
+	/* Links */
+	a {
+		@apply text-blue-600 underline hover:text-blue-800;
+	}
+
+	/* Strong and emphasis */
+	strong {
+		@apply font-bold text-gray-900;
+	}
+
+	em {
+		@apply italic;
+	}
+
+	/* Horizontal rule */
+	hr {
+		@apply my-6 border-gray-300;
+	}
+
+	/* Code blocks */
+	pre[class*='language-'] {
+		@apply overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm;
+	}
+
+	code[class*='language-'] {
+		@apply text-gray-800;
+	}
+
+	/* Inline code */
+	:not(pre) > code {
+		@apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm text-gray-800;
+	}
+
+	/* Tables */
+	table {
+		@apply mb-4 w-full border-collapse overflow-hidden rounded-lg border border-gray-300;
+	}
+
+	th,
+	td {
+		@apply border border-gray-300 px-3 py-2 text-left;
+	}
+
+	th {
+		@apply bg-gray-50 font-semibold;
+	}
+
+	/* Blockquotes */
+	blockquote {
+		@apply my-4 border-l-4 border-gray-300 pl-4 text-gray-600 italic;
+	}
+
+	/* Task lists */
+	input[type='checkbox'] {
+		@apply mr-2;
+	}
+}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { renderMarkdown } from '../utils/markdown.js';
+	import RealtimeMarkdownEditor from './RealtimeMarkdownEditor.svelte';
 
 	interface Props {
 		title: string;
@@ -31,15 +31,11 @@
 		onPublicChange
 	}: Props = $props();
 
-	let isPreviewMode = $state(false);
-
-	function togglePreviewMode() {
-		isPreviewMode = !isPreviewMode;
-	}
+	// Remove old preview mode logic since it's now handled by the RealtimeMarkdownEditor
 </script>
 
 <!-- Mobile-Responsive Note Editor -->
-<div class="container mx-auto max-w-full px-4 lg:max-w-screen-md">
+<div class="w-full">
 	<form
 		onsubmit={(e) => {
 			e.preventDefault();
@@ -64,47 +60,16 @@
 				/>
 			</div>
 
-			<!-- Content Input with Mobile-Optimized Preview Toggle -->
+			<!-- Real-time Markdown Editor -->
 			<div>
-				<div class="mb-2 flex items-center justify-between">
-					<label for="note-content" class="block text-sm font-medium text-gray-700">
-						Note Content (Markdown supported)
-					</label>
-					<button
-						type="button"
-						onclick={togglePreviewMode}
-						class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none md:px-3"
-					>
-						{isPreviewMode ? 'Edit' : 'Preview'}
-					</button>
-				</div>
-
-				{#if isPreviewMode}
-					<!-- Markdown Preview -->
-					<div
-						class="prose prose-gray min-h-[200px] w-full max-w-none rounded-md border border-gray-300 bg-gray-50 px-3 py-2 md:min-h-[288px] md:px-4 md:py-3"
-					>
-						{#if content.trim()}
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html renderMarkdown(content)}
-						{:else}
-							<p class="not-prose text-gray-500 italic">
-								Start writing your thoughts... (You can use Markdown syntax)
-							</p>
-						{/if}
-					</div>
-				{:else}
-					<!-- Textarea Editor with Mobile-Optimized Height -->
-					<textarea
-						value={content}
-						oninput={(e) => onContentChange((e.target as HTMLTextAreaElement).value)}
-						id="note-content"
-						placeholder="Start writing your thoughts... (You can use Markdown syntax)"
-						rows="8"
-						required
-						class="md:rows-12 w-full resize-none rounded-md border-gray-300 px-3 py-2 font-serif text-gray-900 shadow-sm focus:border-gray-500 focus:ring-gray-500 md:px-4 md:py-3"
-					></textarea>
-				{/if}
+				<div class="mb-2 text-sm font-medium text-gray-700">Note Content (Markdown supported)</div>
+				<RealtimeMarkdownEditor
+					{content}
+					{onContentChange}
+					placeholder="Start writing your thoughts... (You can use Markdown syntax)"
+					minHeight="400px"
+					showToolbar={true}
+				/>
 			</div>
 
 			<!-- Tags and Settings - Stack on Mobile -->

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { User } from '$lib/api.js';
+	import type { User, Note } from '$lib/api.js';
 
 	interface Props {
 		user: User | null;
@@ -9,10 +9,14 @@
 		loading: boolean;
 		isMobile: boolean;
 		isMobileMenuOpen: boolean;
+		openNotes: Note[];
+		activeNoteId: string | null;
 		onViewChange: (view: 'notes' | 'create' | 'edit') => void;
 		onGoogleLogin: () => void;
 		onLogout: () => void;
 		onCloseMobileMenu: () => void;
+		onSwitchToNoteTab: (noteId: string) => void;
+		onCloseNoteTab: (noteId: string) => void;
 	}
 
 	let {
@@ -23,10 +27,14 @@
 		loading,
 		isMobile,
 		isMobileMenuOpen,
+		openNotes,
+		activeNoteId,
 		onViewChange,
 		onGoogleLogin,
 		onLogout,
-		onCloseMobileMenu
+		onCloseMobileMenu,
+		onSwitchToNoteTab,
+		onCloseNoteTab
 	}: Props = $props();
 
 	function handleViewChangeAndClose(view: 'notes' | 'create' | 'edit') {
@@ -150,6 +158,54 @@
 					</button>
 				</li>
 			</ul>
+
+			<!-- Open Notes Tabs -->
+			{#if openNotes.length > 0}
+				<div class="mt-4 border-t border-gray-300 pt-4">
+					<h3 class="mb-3 text-xs font-semibold tracking-wider text-gray-500 uppercase">
+						Open Notes
+					</h3>
+					<div class="max-h-60 space-y-1 overflow-y-auto">
+						{#each openNotes as note (note.id)}
+							<div
+								class="group flex items-center rounded-md px-2 py-2 text-sm transition-colors duration-200 {activeNoteId ===
+								note.id
+									? 'bg-gray-200 text-gray-900'
+									: 'text-gray-700 hover:bg-gray-100'}"
+							>
+								<button
+									onclick={() => {
+										onSwitchToNoteTab(note.id);
+										onCloseMobileMenu();
+									}}
+									class="flex-1 truncate text-left font-medium"
+									title={note.title}
+								>
+									{note.title}
+								</button>
+								<button
+									onclick={(e) => {
+										e.stopPropagation();
+										onCloseNoteTab(note.id);
+									}}
+									class="ml-2 flex-shrink-0 rounded p-1 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-300 hover:text-gray-600 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
+									aria-label="Close note"
+									title="Close note"
+								>
+									<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M6 18L18 6M6 6l12 12"
+										></path>
+									</svg>
+								</button>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</nav>
 
 		<!-- Logout button -->

@@ -23,6 +23,10 @@
 	let selectedNote = $state<Note | null>(null);
 	let showDeleteConfirm = $state(false);
 
+	// Open notes tabs state
+	let openNotes = $state<Note[]>([]);
+	let activeNoteId = $state<string | null>(null);
+
 	let filteredNotesCount = $state(0);
 	let selectedNoteIds = $state<string[]>([]);
 
@@ -65,6 +69,11 @@
 		user = null;
 		userProfile = null;
 		currentView = 'notes';
+		// Clear all open tabs
+		openNotes = [];
+		activeNoteId = null;
+		selectedNote = null;
+		resetForm();
 	}
 
 	async function saveNote() {
@@ -101,13 +110,22 @@
 		}
 
 		if (response.data) {
-			resetForm();
-			currentView = 'notes';
-			selectedNote = null;
 			await loadUserNotes();
 
 			const action = isEditing ? 'updated' : 'created';
 			showSuccessToast(`Note ${action} successfully!`);
+
+			if (isEditing && selectedNote && activeNoteId) {
+				// Update the open tab with fresh data
+				const updatedNote = response.data as Note;
+				openNotes = openNotes.map((n) => (n.id === updatedNote.id ? updatedNote : n));
+				selectedNote = updatedNote;
+			} else {
+				// For new notes, close the create view
+				resetForm();
+				currentView = 'notes';
+				selectedNote = null;
+			}
 		} else {
 			const action = isEditing ? 'update' : 'create';
 			// Check if error is due to authentication failure
@@ -135,12 +153,7 @@
 	}
 
 	function startEditNote(note: Note) {
-		noteForm.title = note.title;
-		noteForm.content = note.content;
-		noteForm.tags = note.tags.join(', ');
-		noteForm.is_public = note.is_public;
-		selectedNote = note;
-		currentView = 'edit';
+		openNoteInTab(note);
 	}
 
 	async function deleteNote(note: Note) {
@@ -157,6 +170,9 @@
 		if (!response.error) {
 			await loadUserNotes();
 			showSuccessToast('Note deleted successfully!');
+
+			// Remove from open tabs if it was open
+			closeNoteTab(note.id);
 
 			if (selectedNote?.id === note.id) {
 				currentView = 'notes';
@@ -212,6 +228,50 @@
 		showDeleteConfirm = true;
 	}
 
+	// Open notes tab management
+	function openNoteInTab(note: Note) {
+		// Check if note is already open
+		const isAlreadyOpen = openNotes.find((n) => n.id === note.id);
+		if (!isAlreadyOpen) {
+			openNotes = [...openNotes, note];
+		}
+		activeNoteId = note.id;
+		currentView = 'edit';
+
+		// Set up the form with the note data
+		noteForm.title = note.title;
+		noteForm.content = note.content;
+		noteForm.tags = note.tags.join(', ');
+		noteForm.is_public = note.is_public;
+		selectedNote = note;
+	}
+
+	function closeNoteTab(noteId: string) {
+		openNotes = openNotes.filter((n) => n.id !== noteId);
+
+		// If we're closing the active note, switch to another tab or notes view
+		if (activeNoteId === noteId) {
+			if (openNotes.length > 0) {
+				// Switch to the last remaining tab
+				const lastNote = openNotes[openNotes.length - 1];
+				openNoteInTab(lastNote);
+			} else {
+				// No more open notes, go back to notes view
+				activeNoteId = null;
+				currentView = 'notes';
+				selectedNote = null;
+				resetForm();
+			}
+		}
+	}
+
+	function switchToNoteTab(noteId: string) {
+		const note = openNotes.find((n) => n.id === noteId);
+		if (note) {
+			openNoteInTab(note);
+		}
+	}
+
 	// Mobile detection and menu handling
 	function checkMobile() {
 		if (typeof window !== 'undefined') {
@@ -265,6 +325,9 @@
 					currentView = 'notes';
 					selectedNote = null;
 					resetForm();
+					// Clear all open tabs
+					openNotes = [];
+					activeNoteId = null;
 					error = 'Your session has expired. Please login again.';
 					// Clear the error message after 5 seconds
 					setTimeout(() => {
@@ -357,10 +420,14 @@
 					{loading}
 					{isMobile}
 					{isMobileMenuOpen}
+					{openNotes}
+					{activeNoteId}
 					onViewChange={handleViewChange}
 					onGoogleLogin={handleGoogleLogin}
 					onLogout={handleLogout}
 					onCloseMobileMenu={closeMobileMenu}
+					onSwitchToNoteTab={switchToNoteTab}
+					onCloseNoteTab={closeNoteTab}
 				/>
 			</div>
 		{/if}
@@ -499,8 +566,8 @@
 				</header>
 
 				<div class="flex-1 overflow-x-hidden overflow-y-auto">
-					<div class="container mx-auto max-w-full px-4 py-4 md:py-8 lg:max-w-screen-lg">
-						{#if currentView === 'notes'}
+					{#if currentView === 'notes'}
+						<div class="container mx-auto max-w-full px-4 py-4 md:py-8 lg:max-w-screen-lg">
 							<div class="space-y-4 md:space-y-6">
 								<!-- Flashcard Generators - Stack on mobile, grid on desktop -->
 								<div class="grid w-full gap-4 lg:grid-cols-2">
@@ -544,7 +611,10 @@
 									/>
 								</div>
 							</div>
-						{:else if currentView === 'create' || currentView === 'edit'}
+						</div>
+					{:else if currentView === 'create' || currentView === 'edit'}
+						<!-- Full width for note editor -->
+						<div class="h-full px-4 py-4 md:py-8">
 							<NoteEditor
 								title={noteForm.title}
 								content={noteForm.content}
@@ -559,8 +629,8 @@
 								onTagsChange={(value) => (noteForm.tags = value)}
 								onPublicChange={(value) => (noteForm.is_public = value)}
 							/>
-						{/if}
-					</div>
+						</div>
+					{/if}
 				</div>
 			{:else}
 				<WelcomePage {apiStatus} {loading} onGoogleLogin={handleGoogleLogin} />

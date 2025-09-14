@@ -146,7 +146,7 @@
 						</div>
 					</header>
 
-					<div class="prose prose-sm mb-4 font-serif text-gray-800">
+					<div class="markdown-content mb-4 font-serif text-gray-800">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						<div class="line-clamp-3 overflow-hidden break-words">
 							{@html renderMarkdown(note.content)}
