@@ -142,24 +142,7 @@
 					</button>
 				{/if}
 
-				<!-- Clear Filters Button -->
-				{#if hasActiveFilters()}
-					<button
-						onclick={onClearFilters}
-						class="inline-flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:outline-none"
-					>
-						<svg class="mr-1 h-4 w-4 md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M6 18L18 6M6 6l12 12"
-							></path>
-						</svg>
-						<span class="hidden md:inline">Clear filters</span>
-						<span class="md:hidden">Clear</span>
-					</button>
-				{/if}
+				
 			</div>
 		</div>
 

@@ -21,6 +21,17 @@
 	let editorMode = $state<'split' | 'edit' | 'preview'>('split');
 	let textareaRef = $state<HTMLTextAreaElement | undefined>();
 	let previewRef = $state<HTMLDivElement | undefined>();
+	let isMobile = $state(false);
+
+	function checkMobile() {
+		if (typeof window !== 'undefined') {
+			isMobile = window.innerWidth < 768; // md breakpoint
+			// Set responsive defaults
+			if (isMobile && editorMode === 'split') {
+				editorMode = 'edit';
+			}
+		}
+	}
 
 	// Rendered markdown content
 	let renderedContent = $derived(renderMarkdown(content));
@@ -80,19 +91,49 @@
 		insertMarkdown(table);
 	}
 
-	// Sync scroll between editor and preview
-	function syncScroll(source: 'editor' | 'preview') {
-		if (editorMode !== 'split') return;
+	// Sync scroll between editor and preview with improved accuracy
+	let scrollSyncTimeout: number;
+	let isScrollingSynced = false;
 
-		if (source === 'editor' && textareaRef && previewRef) {
-			const scrollRatio =
-				textareaRef.scrollTop / (textareaRef.scrollHeight - textareaRef.clientHeight);
-			previewRef.scrollTop = scrollRatio * (previewRef.scrollHeight - previewRef.clientHeight);
-		} else if (source === 'preview' && previewRef && textareaRef) {
-			const scrollRatio =
-				previewRef.scrollTop / (previewRef.scrollHeight - previewRef.clientHeight);
-			textareaRef.scrollTop = scrollRatio * (textareaRef.scrollHeight - textareaRef.clientHeight);
+	function syncScroll(source: 'editor' | 'preview') {
+		if (editorMode !== 'split' || isScrollingSynced) return;
+
+		// Clear previous timeout
+		if (scrollSyncTimeout) {
+			clearTimeout(scrollSyncTimeout);
 		}
+
+		// Debounce scroll sync for better performance
+		scrollSyncTimeout = setTimeout(() => {
+			isScrollingSynced = true;
+
+			try {
+				if (source === 'editor' && textareaRef && previewRef) {
+					// Calculate scroll ratio with bounds checking
+					const maxScrollTop = Math.max(0, textareaRef.scrollHeight - textareaRef.clientHeight);
+					if (maxScrollTop > 0) {
+						const scrollRatio = Math.min(1, Math.max(0, textareaRef.scrollTop / maxScrollTop));
+						const previewMaxScroll = Math.max(0, previewRef.scrollHeight - previewRef.clientHeight);
+						previewRef.scrollTop = scrollRatio * previewMaxScroll;
+					}
+				} else if (source === 'preview' && previewRef && textareaRef) {
+					// Calculate scroll ratio with bounds checking
+					const maxScrollTop = Math.max(0, previewRef.scrollHeight - previewRef.clientHeight);
+					if (maxScrollTop > 0) {
+						const scrollRatio = Math.min(1, Math.max(0, previewRef.scrollTop / maxScrollTop));
+						const editorMaxScroll = Math.max(0, textareaRef.scrollHeight - textareaRef.clientHeight);
+						textareaRef.scrollTop = scrollRatio * editorMaxScroll;
+					}
+				}
+			} catch (error) {
+				console.warn('Scroll sync error:', error);
+			}
+
+			// Reset sync flag after a short delay
+			setTimeout(() => {
+				isScrollingSynced = false;
+			}, 50);
+		}, 10); // 10ms debounce for smooth experience
 	}
 
 	// Handle keyboard shortcuts
@@ -120,6 +161,8 @@
 	}
 
 	onMount(() => {
+		checkMobile();
+		
 		// Auto-resize textarea
 		function autoResize() {
 			if (textareaRef) {
@@ -128,13 +171,20 @@
 			}
 		}
 
+		const handleResize = () => {
+			checkMobile();
+		};
+
 		const resizeObserver = new ResizeObserver(autoResize);
 		if (textareaRef) {
 			resizeObserver.observe(textareaRef);
 		}
+		
+		window.addEventListener('resize', handleResize);
 
 		return () => {
 			resizeObserver.disconnect();
+			window.removeEventListener('resize', handleResize);
 		};
 	});
 </script>
@@ -156,15 +206,17 @@
 					>
 						Edit
 					</button>
-					<button
-						type="button"
-						onclick={() => (editorMode = 'split')}
-						class="rounded px-2 py-1 text-xs font-medium transition-colors {editorMode === 'split'
-							? 'bg-white text-gray-900 shadow-sm'
-							: 'text-gray-600 hover:text-gray-900'}"
-					>
-						Split
-					</button>
+					{#if !isMobile}
+						<button
+							type="button"
+							onclick={() => (editorMode = 'split')}
+							class="rounded px-2 py-1 text-xs font-medium transition-colors {editorMode === 'split'
+								? 'bg-white text-gray-900 shadow-sm'
+								: 'text-gray-600 hover:text-gray-900'}"
+						>
+							Split
+						</button>
+					{/if}
 					<button
 						type="button"
 						onclick={() => (editorMode = 'preview')}
@@ -339,10 +391,10 @@
 	{/if}
 
 	<!-- Editor Content -->
-	<div class="flex {editorMode === 'split' ? 'divide-x divide-gray-200' : ''}">
+	<div class="flex {editorMode === 'split' ? 'divide-x divide-gray-200' : ''}" style="height: 600px;">
 		<!-- Editor Pane -->
 		{#if editorMode === 'edit' || editorMode === 'split'}
-			<div class="flex-1 {editorMode === 'split' ? 'w-1/2' : 'w-full'}">
+			<div class="flex-1 {editorMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col">
 				<textarea
 					bind:this={textareaRef}
 					value={content}
@@ -350,20 +402,20 @@
 					onscroll={() => syncScroll('editor')}
 					onkeydown={handleKeydown}
 					{placeholder}
-					class="w-full resize-none overflow-y-auto border-0 p-4 font-mono text-sm text-gray-900 focus:ring-0 focus:outline-none"
-					style="min-height: {minHeight}; max-height: 600px;"
+					class="scrollbar-stable text-editor flex-1 w-full resize-none overflow-y-auto border-0 p-4 font-mono text-sm text-gray-900 focus:ring-0 focus:outline-none"
+					style="min-height: {minHeight};"
 				></textarea>
 			</div>
 		{/if}
 
 		<!-- Preview Pane -->
 		{#if editorMode === 'preview' || editorMode === 'split'}
-			<div class="flex-1 {editorMode === 'split' ? 'w-1/2' : 'w-full'}">
+			<div class="flex-1 {editorMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col">
 				<div
 					bind:this={previewRef}
 					onscroll={() => syncScroll('preview')}
-					class="markdown-content max-w-none overflow-y-auto p-4"
-					style="min-height: {minHeight}; max-height: 600px;"
+					class="scrollbar-stable markdown-content compact max-w-none flex-1 overflow-y-auto p-4"
+					style="min-height: {minHeight};"
 				>
 					{#if content.trim()}
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->

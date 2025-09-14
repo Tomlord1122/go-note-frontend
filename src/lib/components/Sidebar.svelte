@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { User, Note } from '$lib/api.js';
+	import FileUpload from './FileUpload.svelte';
 
 	interface Props {
 		user: User | null;
@@ -17,6 +18,7 @@
 		onCloseMobileMenu: () => void;
 		onSwitchToNoteTab: (noteId: string) => void;
 		onCloseNoteTab: (noteId: string) => void;
+		onFileUpload: (files: { title: string; content: string; filename: string }[]) => void;
 	}
 
 	let {
@@ -34,7 +36,8 @@
 		onLogout,
 		onCloseMobileMenu,
 		onSwitchToNoteTab,
-		onCloseNoteTab
+		onCloseNoteTab,
+		onFileUpload
 	}: Props = $props();
 
 	function handleViewChangeAndClose(view: 'notes' | 'create' | 'edit') {
@@ -50,7 +53,7 @@
 
 <!-- Mobile/Desktop Responsive Sidebar -->
 <aside
-	class="flex h-full flex-col border-r border-gray-400 bg-white shadow-sm transition-transform duration-300 ease-in-out
+	class="flex h-full flex-col border-r border-gray-400 bg-[#dfdfdff0] shadow-sm transition-transform duration-300 ease-in-out
 		{isMobile
 		? `fixed inset-y-0 left-0 z-50 w-64 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`
 		: 'relative w-80 min-w-[280px] lg:w-1/5'}"
@@ -81,22 +84,27 @@
 			{/if}
 		</div>
 
-		<div class="mt-2 flex items-center">
-			<div
-				class="mr-2 h-2 w-2 rounded-full {apiStatus === 'online'
-					? 'bg-gray-600'
-					: apiStatus === 'offline'
-						? 'bg-gray-800'
-						: 'bg-gray-400'}"
-				aria-label="API Status"
-			></div>
-			<span class="text-xs text-gray-600">
-				{apiStatus === 'online'
-					? 'API Running'
-					: apiStatus === 'offline'
-						? 'API Offline'
-						: 'Checking'}
-			</span>
+		<div class="mt-2 flex items-center justify-between">
+			<div class="flex items-center">
+				<div
+					class="mr-2 h-2 w-2 rounded-full {apiStatus === 'online'
+						? 'bg-gray-600'
+						: apiStatus === 'offline'
+							? 'bg-gray-800'
+							: 'bg-gray-400'}"
+					aria-label="API Status"
+				></div>
+				<span class="text-xs text-gray-600">
+					{apiStatus === 'online'
+						? 'API Running'
+						: apiStatus === 'offline'
+							? 'API Offline'
+							: 'Checking'}
+				</span>
+			</div>
+			{#if user}
+				<FileUpload onFileUpload={onFileUpload} disabled={!user} />
+			{/if}
 		</div>
 	</header>
 
@@ -167,7 +175,7 @@
 							Open Notes
 						</h3>
 					</div>
-					<div class="max-h-60 space-y-1 overflow-y-auto">
+					<div class="scrollbar-stable max-h-60 space-y-1 overflow-y-auto">
 						{#each openNotes as note (note.id)}
 							<div
 								class="group flex items-center rounded-md px-2 py-2 text-sm transition-colors duration-200 cursor-pointer {activeNoteId ===

@@ -353,6 +353,16 @@ class ApiClient {
 		});
 	}
 
+	// Bulk create notes from uploaded files
+	async createNotesFromFiles(notes: { title: string; content: string; tags?: string[] }[]) {
+		const results = [];
+		for (const note of notes) {
+			const result = await this.createNote(note);
+			results.push(result);
+		}
+		return results;
+	}
+
 	// Semantic search
 	async searchNotes(query: string, threshold = 0.7, limit = 10) {
 		return this.request<{ notes: SearchNotesItem[]; count: number }>(`/api/notes/search`, {

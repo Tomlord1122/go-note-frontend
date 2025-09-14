@@ -16,12 +16,70 @@
 		minHeight = '400px'
 	}: Props = $props();
 
-	let editorRef: HTMLTextAreaElement;
+	let editorRef = $state<HTMLTextAreaElement>();
+	let previewRef = $state<HTMLDivElement>();
 	let showSlashMenu = $state(false);
 	let slashMenuPosition = $state({ x: 0, y: 0 });
 	let slashMenuItems = $state<Array<{ label: string; action: () => void; icon: string }>>([]);
 	let selectedSlashIndex = $state(0);
 	let slashSearchQuery = $state('');
+	
+	// Editor mode state
+	let editorMode = $state<'edit' | 'preview' | 'split'>('edit');
+	let isMobile = $state(false);
+
+	function checkMobile() {
+		if (typeof window !== 'undefined') {
+			isMobile = window.innerWidth < 768; // md breakpoint
+			// Set responsive defaults
+			editorMode = isMobile ? 'edit' : 'split';
+		}
+	}
+
+	// Sync scroll between editor and preview with debouncing
+	let scrollSyncTimeout: number;
+	let isScrollingSynced = false;
+
+	function syncScroll(source: 'editor' | 'preview') {
+		if (editorMode !== 'split' || isScrollingSynced) return;
+
+		// Clear previous timeout
+		if (scrollSyncTimeout) {
+			clearTimeout(scrollSyncTimeout);
+		}
+
+		// Debounce scroll sync for better performance
+		scrollSyncTimeout = setTimeout(() => {
+			isScrollingSynced = true;
+
+			try {
+				if (source === 'editor' && editorRef && previewRef) {
+					// Calculate scroll ratio with bounds checking
+					const maxScrollTop = Math.max(0, editorRef.scrollHeight - editorRef.clientHeight);
+					if (maxScrollTop > 0) {
+						const scrollRatio = Math.min(1, Math.max(0, editorRef.scrollTop / maxScrollTop));
+						const previewMaxScroll = Math.max(0, previewRef.scrollHeight - previewRef.clientHeight);
+						previewRef.scrollTop = scrollRatio * previewMaxScroll;
+					}
+				} else if (source === 'preview' && previewRef && editorRef) {
+					// Calculate scroll ratio with bounds checking
+					const maxScrollTop = Math.max(0, previewRef.scrollHeight - previewRef.clientHeight);
+					if (maxScrollTop > 0) {
+						const scrollRatio = Math.min(1, Math.max(0, previewRef.scrollTop / maxScrollTop));
+						const editorMaxScroll = Math.max(0, editorRef.scrollHeight - editorRef.clientHeight);
+						editorRef.scrollTop = scrollRatio * editorMaxScroll;
+					}
+				}
+			} catch (error) {
+				console.warn('Scroll sync error:', error);
+			}
+
+			// Reset sync flag after a short delay
+			setTimeout(() => {
+				isScrollingSynced = false;
+			});
+		}); // 10ms debounce for smooth experience
+	}
 
 	// Slash command definitions
 	const slashCommands = [
@@ -345,46 +403,102 @@
 	}
 
 	onMount(() => {
+		checkMobile();
+		
+		const handleResize = () => {
+			checkMobile();
+		};
+		
 		document.addEventListener('click', handleClickOutside);
+		window.addEventListener('resize', handleResize);
 
 		return () => {
 			document.removeEventListener('click', handleClickOutside);
+			window.removeEventListener('resize', handleResize);
 		};
 	});
 </script>
 
 <!-- Notion-like Editor with Live Preview -->
 <div class="relative w-full">
-	<div class="flex gap-4">
-		<!-- Editor Pane -->
-		<div class="flex-1">
-			<textarea
-				bind:this={editorRef}
-				value={content}
-				oninput={handleInput}
-				onkeydown={handleKeyDown}
-				{placeholder}
-				class="w-full resize-none overflow-y-auto border-0 p-4 font-mono text-sm text-gray-900 focus:ring-0 focus:outline-none"
-				style="min-height: {minHeight}; max-height: 600px;"
-			></textarea>
+	<!-- Mode Switcher Toolbar -->
+	<div class="border-b border-gray-200 bg-gray-50 p-2">
+		<div class="flex items-center justify-between">
+			<div class="flex rounded-md border border-gray-300 bg-white p-0.5">
+				<button
+					type="button"
+					onclick={() => (editorMode = 'edit')}
+					class="rounded px-2 py-1 text-xs font-medium transition-colors {editorMode === 'edit'
+						? 'bg-gray-600 text-white shadow-sm'
+						: 'text-gray-600 hover:text-gray-900'}"
+				>
+					Edit
+				</button>
+				{#if !isMobile}
+					<button
+						type="button"
+						onclick={() => (editorMode = 'split')}
+						class="rounded px-2 py-1 text-xs font-medium transition-colors {editorMode === 'split'
+							? 'bg-gray-600 text-white shadow-sm'
+							: 'text-gray-600 hover:text-gray-900'}"
+					>
+						Split
+					</button>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (editorMode = 'preview')}
+					class="rounded px-2 py-1 text-xs font-medium transition-colors {editorMode === 'preview'
+						? 'bg-gray-600 text-white shadow-sm'
+						: 'text-gray-600 hover:text-gray-900'}"
+				>
+					Preview
+				</button>
+			</div>
+			<span class="text-xs text-gray-500">
+				{isMobile ? 'Mobile' : 'Desktop'} Mode
+			</span>
 		</div>
+	</div>
+
+	<!-- Editor Content -->
+	<div class="flex {editorMode === 'split' ? 'divide-x divide-gray-200' : ''}" style="height: 600px;">
+		<!-- Editor Pane -->
+		{#if editorMode === 'edit' || editorMode === 'split'}
+			<div class="flex-1 {editorMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col">
+				<textarea
+					bind:this={editorRef}
+					value={content}
+					oninput={handleInput}
+					onkeydown={handleKeyDown}
+					onscroll={() => syncScroll('editor')}
+					{placeholder}
+					class="scrollbar-stable text-editor flex-1 w-full resize-none overflow-y-auto border-0 p-4 font-mono text-sm text-gray-900 focus:ring-0 focus:outline-none"
+					style="min-height: {minHeight};"
+				></textarea>
+			</div>
+		{/if}
 
 		<!-- Live Preview Pane -->
-		<div class="flex-1 border-l border-gray-200">
-			<div
-				class="markdown-content overflow-y-auto p-4"
-				style="min-height: {minHeight}; max-height: 600px;"
-			>
-				{#if content.trim()}
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html renderMarkdown(content)}
-				{:else}
-					<p class="text-gray-500 italic">
-						{placeholder}
-					</p>
-				{/if}
+		{#if editorMode === 'preview' || editorMode === 'split'}
+			<div class="flex-1 {editorMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col">
+				<div
+					bind:this={previewRef}
+					onscroll={() => syncScroll('preview')}
+					class="scrollbar-stable markdown-content compact text-wrap flex-1 overflow-y-auto p-4"
+					style="min-height: {minHeight};"
+				>
+					{#if content.trim()}
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html renderMarkdown(content)}
+					{:else}
+						<p class="text-gray-500 italic">
+							{placeholder}
+						</p>
+					{/if}
+				</div>
 			</div>
-		</div>
+		{/if}
 	</div>
 
 	<!-- Enhanced Slash Command Menu -->
@@ -427,7 +541,7 @@
 			</div>
 
 			<!-- Command List -->
-			<div class="max-h-64 overflow-y-auto p-2">
+			<div class="scrollbar-stable max-h-64 overflow-y-auto p-2">
 				{#if slashMenuItems.length > 0}
 					{#each slashMenuItems as item, index (item.label)}
 						<button

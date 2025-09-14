@@ -314,6 +314,46 @@
 		debouncedAutoSave();
 	}
 
+	// File upload handling
+	async function handleFileUpload(files: { title: string; content: string; filename: string }[]) {
+		if (!user) return;
+
+		try {
+			const notesToCreate = files.map(file => ({
+				title: file.title,
+				content: file.content,
+				tags: ['uploaded'] // Add a tag to identify uploaded files
+			}));
+
+			const results = await api.createNotesFromFiles(notesToCreate);
+			
+			let successCount = 0;
+			let errorCount = 0;
+
+			for (const result of results) {
+				if (result.data) {
+					successCount++;
+				} else {
+					errorCount++;
+					console.error('Failed to create note:', result.error);
+				}
+			}
+
+			if (successCount > 0) {
+				successMessage = `Successfully uploaded ${successCount} note${successCount > 1 ? 's' : ''}`;
+				await loadUserNotes(); // Refresh the notes list
+			}
+
+			if (errorCount > 0) {
+				error = `Failed to upload ${errorCount} file${errorCount > 1 ? 's' : ''}. Please try again.`;
+			}
+
+		} catch (err) {
+			console.error('File upload error:', err);
+			error = 'Failed to upload files. Please try again.';
+		}
+	}
+
 	// Mobile detection and menu handling
 	function checkMobile() {
 		if (typeof window !== 'undefined') {
@@ -473,6 +513,7 @@
 						onCloseMobileMenu={closeMobileMenu}
 						onSwitchToNoteTab={switchToNoteTab}
 						onCloseNoteTab={closeNoteTab}
+						onFileUpload={handleFileUpload}
 					/>
 			</div>
 		{/if}
@@ -610,7 +651,7 @@
 					</div>
 				</header>
 
-				<div class="flex-1 overflow-x-hidden overflow-y-auto">
+				<div class="scrollbar-stable flex-1 overflow-x-hidden overflow-y-auto">
 					{#if currentView === 'notes'}
 						<div class="container mx-auto max-w-full px-4 py-4 md:py-8 lg:max-w-screen-lg">
 							<div class="space-y-4 md:space-y-6">

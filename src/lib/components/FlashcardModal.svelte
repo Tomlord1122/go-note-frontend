@@ -106,7 +106,7 @@
 			</header>
 
 			<!-- Content with Mobile-Optimized Scrolling -->
-			<div class="max-h-[60vh] overflow-y-auto p-4 md:max-h-[70vh] md:p-8">
+			<div class="scrollbar-stable max-h-[60vh] overflow-y-auto p-4 md:max-h-[70vh] md:p-8">
 				<div class="space-y-6 md:space-y-8">
 					<!-- Answer -->
 					<div>
